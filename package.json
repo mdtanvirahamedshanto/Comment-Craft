@@ -167,17 +167,16 @@
         }
       ]
     },
-      "commandPalette": [
-        {
-          "command": "commentCraft.generateComment",
-          "title": "Comment Craft: Generate Comment"
-        },
-        {
-          "command": "commentCraft.formatComments",
-          "title": "Comment Craft: Format Comments"
-        }
-      ]
-    },
+    "commandPalette": [
+      {
+        "command": "commentCraft.generateComment",
+        "title": "Comment Craft: Generate Comment"
+      },
+      {
+        "command": "commentCraft.formatComments",
+        "title": "Comment Craft: Format Comments"
+      }
+    ],
     "keybindings": [
       {
         "command": "commentCraft.generateComment",

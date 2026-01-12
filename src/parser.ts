@@ -23,7 +23,7 @@ export class Parser {
     public supportedLanguage = true;
 
     // Read from the package.json
-    private contributions: Contributions = vscode.workspace.getConfiguration('commentCraft') as any;
+    private contributions: Contributions = vscode.workspace.getConfiguration('commentCraft') as unknown as Contributions;
 
     // The configuration necessary to find supported languages on startup
     private configuration: Configuration;
@@ -78,7 +78,9 @@ export class Parser {
     public FindSingleLineComments(activeEditor: vscode.TextEditor): void {
 
         // If highlight single line comments is off, single line comments are not supported for this language
-        if (!this.highlightSingleLineComments) return;
+        if (!this.highlightSingleLineComments) {
+            return;
+        }
 
         let text = activeEditor.document.getText();
 

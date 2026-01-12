@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { TagScanner, TagInfo } from './tagScanner';
+import { TagScanner } from './tagScanner';
 
 export interface CommentStatistics {
     totalTags: number;

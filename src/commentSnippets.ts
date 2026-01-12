@@ -10,9 +10,9 @@ export class CommentSnippets {
         for (const language of languages) {
             const snippets = this.getSnippetsForLanguage(language);
             
-            for (const snippet of snippets) {
-                // Note: VS Code snippets are typically defined in package.json
-                // This is a programmatic approach for dynamic snippets
+            // Note: VS Code snippets are typically defined in package.json
+            // This is a programmatic approach for dynamic snippets
+            for (const _snippet of snippets) {
                 disposables.push(
                     vscode.languages.registerCompletionItemProvider(
                         { scheme: 'file', language: language },
@@ -50,7 +50,6 @@ export class CommentSnippets {
     }> {
         const isJS = ['javascript', 'typescript'].includes(language);
         const isPython = language === 'python';
-        const isJava = ['java', 'c', 'cpp', 'csharp'].includes(language);
 
         const commentStart = isPython ? '#' : isJS ? '//' : '//';
         const blockStart = isPython ? '"""' : isJS ? '/**' : '/**';

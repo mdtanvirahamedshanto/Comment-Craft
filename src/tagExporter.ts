@@ -10,7 +10,7 @@ export class TagExporter {
         this.tagScanner = tagScanner;
     }
 
-    async export(format: 'json' | 'csv' | 'markdown'): Promise<void> {
+    async export(format?: 'json' | 'csv' | 'markdown'): Promise<void> {
         const tags = this.tagScanner.getTags();
         
         if (tags.size === 0) {
@@ -34,17 +34,20 @@ export class TagExporter {
         try {
             let content: string;
             const extension = path.extname(uri.fsPath).toLowerCase();
+            
+            // Normalize format - remove leading dot if present and convert 'md' to 'markdown'
+            let normalizedFormat: string = format || (extension.startsWith('.') ? extension.substring(1) : extension);
+            if (normalizedFormat === 'md') {
+                normalizedFormat = 'markdown';
+            }
 
-            switch (format || extension) {
-                case '.json':
+            switch (normalizedFormat as 'json' | 'csv' | 'markdown') {
                 case 'json':
                     content = this.exportJSON(tags);
                     break;
-                case '.csv':
                 case 'csv':
                     content = this.exportCSV(tags);
                     break;
-                case '.md':
                 case 'markdown':
                     content = this.exportMarkdown(tags);
                     break;

@@ -8,6 +8,7 @@ import { TagCodeLensProvider } from './codeLens';
 import { TagExporter } from './tagExporter';
 import { IssueTracker } from './issueTracker';
 import { TagFilter } from './tagFilter';
+import { TagInfo } from './tagScanner';
 import { CommentTemplateManager } from './commentTemplates';
 import { CommentStatisticsProvider } from './commentStatistics';
 import { CommentSearchProvider } from './commentSearch';
@@ -33,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // ===== Better Comments Feature (Comment Highlighting) =====
     let activeEditor: vscode.TextEditor;
 
-    let configuration: Configuration = new Configuration();
+    const configuration: Configuration = new Configuration();
     let parser: Parser = new Parser(configuration);
     
     // ===== New Features Initialization =====
@@ -74,12 +75,16 @@ export async function activate(context: vscode.ExtensionContext) {
     statusBarManager.update();
 
     // Called to handle events below
-    let updateDecorations = function () {
+    const updateDecorations = function () {
         // if no active window is open, return
-        if (!activeEditor) return;
+        if (!activeEditor) {
+            return;
+        }
 
         // if lanugage isn't supported, return
-        if (!parser.supportedLanguage) return;
+        if (!parser.supportedLanguage) {
+            return;
+        }
 
         // Finds the single line comments using the language comment delimiter
         parser.FindSingleLineComments(activeEditor);
@@ -144,7 +149,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // * IMPORTANT:
     // * To avoid calling update too often,
     // * set a timer for 100ms to wait before updating decorations
-    var timeout: NodeJS.Timeout | undefined;
+    let timeout: NodeJS.Timeout | undefined;
     function triggerUpdateDecorations() {
         if (timeout) {
             clearTimeout(timeout);
@@ -333,7 +338,7 @@ export async function activate(context: vscode.ExtensionContext) {
             location: vscode.ProgressLocation.Notification,
             title: 'Scanning workspace for tags...',
             cancellable: false
-        }, async (progress) => {
+        }, async (_progress) => {
             await tagScanner.scanWorkspace();
             treeProvider.setTags(tagScanner.getTags());
             statusBarManager.update();
@@ -350,7 +355,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
     
     // Issue tracker commands
-    const createGitHubIssueCommand = vscode.commands.registerCommand('commentCraft.createGitHubIssue', async (tagInfo: any) => {
+    const createGitHubIssueCommand = vscode.commands.registerCommand('commentCraft.createGitHubIssue', async (tagInfo: TagInfo) => {
         if (tagInfo) {
             await IssueTracker.createGitHubIssue(tagInfo);
         } else {
@@ -358,7 +363,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     });
     
-    const createJiraTicketCommand = vscode.commands.registerCommand('commentCraft.createJiraTicket', async (tagInfo: any) => {
+    const createJiraTicketCommand = vscode.commands.registerCommand('commentCraft.createJiraTicket', async (tagInfo: TagInfo) => {
         if (tagInfo) {
             await IssueTracker.createJiraTicket(tagInfo);
         } else {
@@ -394,7 +399,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
     
     // Tag actions command (for CodeLens)
-    const tagActionsCommand = vscode.commands.registerCommand('commentCraft.tagActions', async (tagInfo: any) => {
+    const tagActionsCommand = vscode.commands.registerCommand('commentCraft.tagActions', async (tagInfo: TagInfo) => {
         if (!tagInfo) {
             return;
         }
@@ -429,9 +434,9 @@ export async function activate(context: vscode.ExtensionContext) {
         }
         
         const tags = tagScanner.getTags();
-        const fileTags: any[] = [];
+        const fileTags: TagInfo[] = [];
         
-        for (const [tagName, tagInfos] of tags.entries()) {
+        for (const [_tagName, tagInfos] of tags.entries()) {
             for (const tagInfo of tagInfos) {
                 if (tagInfo.filePath === editor.document.uri.fsPath) {
                     fileTags.push(tagInfo);
@@ -450,17 +455,17 @@ export async function activate(context: vscode.ExtensionContext) {
         const currentPosition = editor.selection.active;
         const currentLine = currentPosition.line;
         
-        let targetTag: any = null;
+        let targetTag: TagInfo | null = null;
         if (direction === 'next') {
-            targetTag = fileTags.find(tag => tag.line > currentLine);
+            targetTag = fileTags.find(tag => tag.line > currentLine) || null;
             if (!targetTag) {
-                targetTag = fileTags[0]; // Wrap around
+                targetTag = fileTags[0] || null; // Wrap around
             }
         } else {
             const reversed = [...fileTags].reverse();
-            targetTag = reversed.find(tag => tag.line < currentLine);
+            targetTag = reversed.find(tag => tag.line < currentLine) || null;
             if (!targetTag) {
-                targetTag = fileTags[fileTags.length - 1]; // Wrap around
+                targetTag = fileTags[fileTags.length - 1] || null; // Wrap around
             }
         }
         
@@ -526,7 +531,7 @@ export async function activate(context: vscode.ExtensionContext) {
             location: vscode.ProgressLocation.Notification,
             title: 'Validating comments...',
             cancellable: false
-        }, async (progress) => {
+        }, async (_progress) => {
             const results = await validator.validateWorkspace();
             await validator.showValidationResults(results);
         });
@@ -599,7 +604,7 @@ async function generateComment(text: string, languageId: string): Promise<string
 /**
  * Gets the comment prefix for a given language
  */
-function getCommentPrefix(languageId: string, style: string): string {
+    function getCommentPrefix(languageId: string, _style: string): string {
     const prefixes: { [key: string]: string } = {
         // Languages using //
         'javascript': '//',
