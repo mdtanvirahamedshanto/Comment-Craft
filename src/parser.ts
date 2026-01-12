@@ -274,8 +274,16 @@ export class Parser {
      */
     private setTags(): void {
         let items = this.contributions.tags;
+        const config = vscode.workspace.getConfiguration('commentCraft');
+        const showGutterMarkers = config.get<boolean>('showGutterMarkers', true);
+        const showOverviewRuler = config.get<boolean>('showOverviewRuler', true);
+        const enableHighContrast = config.get<boolean>('enableHighContrast', false);
+
         for (let item of items) {
-            let options: vscode.DecorationRenderOptions = { color: item.color, backgroundColor: item.backgroundColor };
+            let options: vscode.DecorationRenderOptions = { 
+                color: item.color, 
+                backgroundColor: item.backgroundColor 
+            };
 
             // ? the textDecoration is initialised to empty so we can concat a preceeding space on it
             options.textDecoration = "";
@@ -296,14 +304,56 @@ export class Parser {
                 options.fontStyle = "italic";
             }
 
-            let escapedSequence = item.tag.replace(/([()[{*+.$^\\|?])/g, '\\$1');
+            // Add gutter markers
+            if (showGutterMarkers) {
+                options.gutterIconPath = vscode.Uri.parse(`data:image/svg+xml;base64,${this.createGutterIcon(item.color)}`);
+                options.gutterIconSize = 'contain';
+            }
+
+            // Add overview ruler
+            if (showOverviewRuler) {
+                options.overviewRulerColor = item.color;
+                options.overviewRulerLane = vscode.OverviewRulerLane.Right;
+            }
+
+            // High contrast mode adjustments
+            if (enableHighContrast) {
+                options.border = `1px solid ${item.color}`;
+                if (!item.backgroundColor || item.backgroundColor === 'transparent') {
+                    options.backgroundColor = this.adjustColorForContrast(item.color);
+                }
+            }
+
+            // Use pattern if available, otherwise use tag
+            let escapedSequence: string;
+            if (item.pattern) {
+                // Pattern is already a regex, but we need to extract the tag part for matching
+                escapedSequence = item.pattern;
+            } else {
+                escapedSequence = item.tag.replace(/([()[{*+.$^\\|?])/g, '\\$1');
+                escapedSequence = escapedSequence.replace(/\//gi, "\\/"); // ! hardcoded to escape slashes
+            }
+
             this.tags.push({
                 tag: item.tag,
-                escapedTag: escapedSequence.replace(/\//gi, "\\/"), // ! hardcoded to escape slashes
+                escapedTag: escapedSequence,
                 ranges: [],
                 decoration: vscode.window.createTextEditorDecorationType(options)
             });
         }
+    }
+
+    private createGutterIcon(color: string): string {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="4" fill="${color}"/>
+        </svg>`;
+        return Buffer.from(svg).toString('base64');
+    }
+
+    private adjustColorForContrast(color: string): string {
+        // Simple contrast adjustment - make background lighter/darker
+        // This is a basic implementation
+        return color + '20'; // Add alpha for transparency
     }
 
     /**

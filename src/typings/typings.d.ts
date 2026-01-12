@@ -11,6 +11,7 @@ interface Contributions {
     highlightPlainText: boolean;
     tags: [{
         tag: string;
+        pattern?: string;
         color: string;
         strikethrough: boolean;
         underline: boolean;

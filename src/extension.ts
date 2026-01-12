@@ -1,6 +1,19 @@
 import * as vscode from 'vscode';
 import { Configuration } from './configuration';
 import { Parser } from './parser';
+import { TagTreeProvider } from './tagTree';
+import { TagScanner } from './tagScanner';
+import { StatusBarManager } from './statusBar';
+import { TagCodeLensProvider } from './codeLens';
+import { TagExporter } from './tagExporter';
+import { IssueTracker } from './issueTracker';
+import { TagFilter } from './tagFilter';
+import { CommentTemplateManager } from './commentTemplates';
+import { CommentStatisticsProvider } from './commentStatistics';
+import { CommentSearchProvider } from './commentSearch';
+import { CommentValidator } from './commentValidation';
+import { CommentSnippets } from './commentSnippets';
+import { CommentReminderManager } from './commentReminders';
 
 /**
  * Activates the Comment Craft extension
@@ -9,11 +22,56 @@ import { Parser } from './parser';
 export async function activate(context: vscode.ExtensionContext) {
     console.log('Comment Craft extension is now active!');
 
+    const config = vscode.workspace.getConfiguration('commentCraft');
+    const enabled = config.get<boolean>('enabled', true);
+    
+    if (!enabled) {
+        console.log('Comment Craft is disabled');
+        return;
+    }
+
     // ===== Better Comments Feature (Comment Highlighting) =====
     let activeEditor: vscode.TextEditor;
 
     let configuration: Configuration = new Configuration();
     let parser: Parser = new Parser(configuration);
+    
+    // ===== New Features Initialization =====
+    const tagScanner = new TagScanner();
+    const statusBarManager = new StatusBarManager(tagScanner);
+    const codeLensProvider = new TagCodeLensProvider(tagScanner);
+    const tagExporter = new TagExporter(tagScanner);
+    const templateManager = new CommentTemplateManager();
+    const statisticsProvider = new CommentStatisticsProvider(tagScanner);
+    const searchProvider = new CommentSearchProvider(tagScanner);
+    const validator = new CommentValidator();
+    const reminderManager = new CommentReminderManager(tagScanner);
+    
+    // Register comment snippets
+    const snippetDisposables = CommentSnippets.registerSnippets();
+    context.subscriptions.push(...snippetDisposables);
+    
+    // Start reminders if enabled
+    reminderManager.startReminders();
+    
+    // Register tree view
+    const treeProvider = new TagTreeProvider();
+    const treeView = vscode.window.createTreeView('commentCraft.tagTree', {
+        treeDataProvider: treeProvider,
+        showCollapseAll: true
+    });
+    
+    // Register CodeLens provider
+    const codeLensDisposable = vscode.languages.registerCodeLensProvider(
+        { scheme: 'file' },
+        codeLensProvider
+    );
+    context.subscriptions.push(codeLensDisposable);
+    
+    // Initial scan of open files
+    await tagScanner.scanOpenFiles();
+    treeProvider.setTags(tagScanner.getTags());
+    statusBarManager.update();
 
     // Called to handle events below
     let updateDecorations = function () {
@@ -66,11 +124,20 @@ export async function activate(context: vscode.ExtensionContext) {
     }, null, context.subscriptions);
 
     // * Handle file contents changed
-    vscode.workspace.onDidChangeTextDocument(event => {
+    vscode.workspace.onDidChangeTextDocument(async event => {
 
         // Trigger updates if the text was changed in the same document
         if (activeEditor && event.document === activeEditor.document) {
             triggerUpdateDecorations();
+        }
+        
+        // Update tag scanner for changed files
+        if (event.document.uri.scheme === 'file') {
+            tagScanner.queueScan(event.document.uri);
+            await tagScanner.scanFile(event.document.uri);
+            treeProvider.setTags(tagScanner.getTags());
+            statusBarManager.update();
+            codeLensProvider.refresh();
         }
     }, null, context.subscriptions);
 
@@ -151,7 +218,346 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     );
 
-    context.subscriptions.push(generateCommentCommand, formatCommentsCommand);
+    // ===== Navigation Commands =====
+    const jumpToNextTagCommand = vscode.commands.registerCommand('commentCraft.jumpToNextTag', () => {
+        jumpToTag('next');
+    });
+    
+    const jumpToPreviousTagCommand = vscode.commands.registerCommand('commentCraft.jumpToPreviousTag', () => {
+        jumpToTag('previous');
+    });
+    
+    const listTagsInFileCommand = vscode.commands.registerCommand('commentCraft.listTagsInFile', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('No active editor found');
+            return;
+        }
+        
+        const tags = tagScanner.getTags();
+        const fileTags: any[] = [];
+        
+        for (const [tagName, tagInfos] of tags.entries()) {
+            for (const tagInfo of tagInfos) {
+                if (tagInfo.filePath === editor.document.uri.fsPath) {
+                    fileTags.push({
+                        label: `${tagName}: Line ${tagInfo.line + 1}`,
+                        description: tagInfo.fullLine.trim(),
+                        tagInfo: tagInfo
+                    });
+                }
+            }
+        }
+        
+        if (fileTags.length === 0) {
+            vscode.window.showInformationMessage('No tags found in current file');
+            return;
+        }
+        
+        const selected = await vscode.window.showQuickPick(fileTags, {
+            placeHolder: 'Select a tag to jump to'
+        });
+        
+        if (selected && selected.tagInfo) {
+            const tagInfo = selected.tagInfo;
+            const position = new vscode.Position(tagInfo.line, tagInfo.column);
+            editor.selection = new vscode.Selection(position, position);
+            editor.revealRange(new vscode.Range(position, position));
+        }
+    });
+    
+    const toggleTagVisibilityCommand = vscode.commands.registerCommand('commentCraft.toggleTagVisibility', () => {
+        const config = vscode.workspace.getConfiguration('commentCraft');
+        const current = config.get<boolean>('enabled', true);
+        config.update('enabled', !current, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`Tag visibility ${!current ? 'enabled' : 'disabled'}`);
+    });
+    
+    // ===== Tag Lifecycle Commands =====
+    const markAsDoneCommand = vscode.commands.registerCommand('commentCraft.markAsDone', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('No active editor found');
+            return;
+        }
+        
+        const position = editor.selection.active;
+        const line = editor.document.lineAt(position.line);
+        const lineText = line.text;
+        
+        // Find tag in current line
+        const config = vscode.workspace.getConfiguration('commentCraft');
+        const tagConfigs = config.get<any[]>('tags', []);
+        
+        for (const tagConfig of tagConfigs) {
+            const pattern = tagConfig.pattern || `\\b${tagConfig.tag}\\b[:\\s]?`;
+            const regex = new RegExp(pattern, 'i');
+            const match = regex.exec(lineText);
+            
+            if (match && match.index <= position.character && match.index + match[0].length >= position.character) {
+                // Replace TODO/FIXME/etc with DONE
+                const newText = lineText.replace(regex, 'DONE');
+                const range = new vscode.Range(position.line, 0, position.line, lineText.length);
+                
+                await editor.edit(editBuilder => {
+                    editBuilder.replace(range, newText);
+                });
+                
+                vscode.window.showInformationMessage(`Marked as DONE`);
+                
+                // Refresh
+                await tagScanner.scanFile(editor.document.uri);
+                treeProvider.setTags(tagScanner.getTags());
+                statusBarManager.update();
+                codeLensProvider.refresh();
+                return;
+            }
+        }
+        
+        vscode.window.showWarningMessage('No tag found at cursor position');
+    });
+    
+    // ===== Export Commands =====
+    const exportTagsCommand = vscode.commands.registerCommand('commentCraft.exportTags', async () => {
+        const format = await vscode.window.showQuickPick(['json', 'csv', 'markdown'], {
+            placeHolder: 'Select export format'
+        });
+        
+        if (format) {
+            await tagExporter.export(format as 'json' | 'csv' | 'markdown');
+        }
+    });
+    
+    const scanWorkspaceCommand = vscode.commands.registerCommand('commentCraft.scanWorkspace', async () => {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Scanning workspace for tags...',
+            cancellable: false
+        }, async (progress) => {
+            await tagScanner.scanWorkspace();
+            treeProvider.setTags(tagScanner.getTags());
+            statusBarManager.update();
+            codeLensProvider.refresh();
+            vscode.window.showInformationMessage('Workspace scan complete');
+        });
+    });
+    
+    const refreshTreeViewCommand = vscode.commands.registerCommand('commentCraft.refreshTreeView', async () => {
+        await tagScanner.scanOpenFiles();
+        treeProvider.setTags(tagScanner.getTags());
+        statusBarManager.update();
+        codeLensProvider.refresh();
+    });
+    
+    // Issue tracker commands
+    const createGitHubIssueCommand = vscode.commands.registerCommand('commentCraft.createGitHubIssue', async (tagInfo: any) => {
+        if (tagInfo) {
+            await IssueTracker.createGitHubIssue(tagInfo);
+        } else {
+            vscode.window.showWarningMessage('No tag selected');
+        }
+    });
+    
+    const createJiraTicketCommand = vscode.commands.registerCommand('commentCraft.createJiraTicket', async (tagInfo: any) => {
+        if (tagInfo) {
+            await IssueTracker.createJiraTicket(tagInfo);
+        } else {
+            vscode.window.showWarningMessage('No tag selected');
+        }
+    });
+    
+    // Filter commands
+    const filterTagsCommand = vscode.commands.registerCommand('commentCraft.filterTags', async () => {
+        const tags = tagScanner.getTags();
+        const tagNames = Array.from(tags.keys());
+        
+        const selectedTags = await vscode.window.showQuickPick(
+            tagNames.map(name => ({ label: name, picked: true })),
+            {
+                canPickMany: true,
+                placeHolder: 'Select tags to filter'
+            }
+        );
+        
+        if (selectedTags) {
+            const filterOptions = {
+                tagNames: selectedTags.map(t => t.label)
+            };
+            
+            const filtered = TagFilter.filter(tags, filterOptions);
+            treeProvider.setTags(filtered);
+        }
+    });
+    
+    const clearFilterCommand = vscode.commands.registerCommand('commentCraft.clearFilter', async () => {
+        treeProvider.setTags(tagScanner.getTags());
+    });
+    
+    // Tag actions command (for CodeLens)
+    const tagActionsCommand = vscode.commands.registerCommand('commentCraft.tagActions', async (tagInfo: any) => {
+        if (!tagInfo) {
+            return;
+        }
+        
+        const actions = [
+            { label: 'Mark as Done', command: 'commentCraft.markAsDone' },
+            { label: 'Create GitHub Issue', command: 'commentCraft.createGitHubIssue' },
+            { label: 'Create Jira Ticket', command: 'commentCraft.createJiraTicket' },
+            { label: 'Copy to Clipboard', command: 'commentCraft.copyTag' }
+        ];
+        
+        const selected = await vscode.window.showQuickPick(actions, {
+            placeHolder: 'Select an action'
+        });
+        
+        if (selected) {
+            if (selected.command === 'commentCraft.copyTag') {
+                await vscode.env.clipboard.writeText(`${tagInfo.tagName}: ${tagInfo.fullLine.trim()}`);
+                vscode.window.showInformationMessage('Tag copied to clipboard');
+            } else {
+                await vscode.commands.executeCommand(selected.command, tagInfo);
+            }
+        }
+    });
+    
+    // Helper function to jump to tags
+    function jumpToTag(direction: 'next' | 'previous'): void {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('No active editor found');
+            return;
+        }
+        
+        const tags = tagScanner.getTags();
+        const fileTags: any[] = [];
+        
+        for (const [tagName, tagInfos] of tags.entries()) {
+            for (const tagInfo of tagInfos) {
+                if (tagInfo.filePath === editor.document.uri.fsPath) {
+                    fileTags.push(tagInfo);
+                }
+            }
+        }
+        
+        if (fileTags.length === 0) {
+            vscode.window.showInformationMessage('No tags found in current file');
+            return;
+        }
+        
+        // Sort by line number
+        fileTags.sort((a, b) => a.line - b.line);
+        
+        const currentPosition = editor.selection.active;
+        const currentLine = currentPosition.line;
+        
+        let targetTag: any = null;
+        if (direction === 'next') {
+            targetTag = fileTags.find(tag => tag.line > currentLine);
+            if (!targetTag) {
+                targetTag = fileTags[0]; // Wrap around
+            }
+        } else {
+            const reversed = [...fileTags].reverse();
+            targetTag = reversed.find(tag => tag.line < currentLine);
+            if (!targetTag) {
+                targetTag = fileTags[fileTags.length - 1]; // Wrap around
+            }
+        }
+        
+        if (targetTag) {
+            const position = new vscode.Position(targetTag.line, targetTag.column);
+            editor.selection = new vscode.Selection(position, position);
+            editor.revealRange(new vscode.Range(position, position));
+        }
+    }
+    
+    // Watch for configuration changes
+    vscode.workspace.onDidChangeConfiguration(async (e) => {
+        if (e.affectsConfiguration('commentCraft')) {
+            // Reinitialize parser with new config
+            parser = new Parser(configuration);
+            if (activeEditor) {
+                await parser.SetRegex(activeEditor.document.languageId);
+                triggerUpdateDecorations();
+            }
+            
+            // Refresh all features
+            await tagScanner.scanOpenFiles();
+            treeProvider.setTags(tagScanner.getTags());
+            statusBarManager.update();
+            codeLensProvider.refresh();
+        }
+    }, null, context.subscriptions);
+    
+    // ===== New Feature Commands =====
+    const insertTemplateCommand = vscode.commands.registerCommand('commentCraft.insertTemplate', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage('No active editor found');
+            return;
+        }
+        await templateManager.showTemplatePicker(editor);
+    });
+    
+    const showStatisticsCommand = vscode.commands.registerCommand('commentCraft.showStatistics', async () => {
+        await statisticsProvider.showStatisticsPanel();
+    });
+    
+    const searchCommentsCommand = vscode.commands.registerCommand('commentCraft.searchComments', async () => {
+        await searchProvider.search();
+    });
+    
+    const advancedSearchCommand = vscode.commands.registerCommand('commentCraft.advancedSearch', async () => {
+        await searchProvider.advancedSearch();
+    });
+    
+    const validateCommentsCommand = vscode.commands.registerCommand('commentCraft.validateComments', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor) {
+            const results = await validator.validateFile(editor.document);
+            await validator.showValidationResults(results);
+        } else {
+            vscode.window.showWarningMessage('No active editor found');
+        }
+    });
+    
+    const validateWorkspaceCommand = vscode.commands.registerCommand('commentCraft.validateWorkspace', async () => {
+        vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: 'Validating comments...',
+            cancellable: false
+        }, async (progress) => {
+            const results = await validator.validateWorkspace();
+            await validator.showValidationResults(results);
+        });
+    });
+
+    context.subscriptions.push(
+        generateCommentCommand, 
+        formatCommentsCommand,
+        jumpToNextTagCommand,
+        jumpToPreviousTagCommand,
+        listTagsInFileCommand,
+        toggleTagVisibilityCommand,
+        markAsDoneCommand,
+        exportTagsCommand,
+        scanWorkspaceCommand,
+        refreshTreeViewCommand,
+        createGitHubIssueCommand,
+        createJiraTicketCommand,
+        filterTagsCommand,
+        clearFilterCommand,
+        tagActionsCommand,
+        insertTemplateCommand,
+        showStatisticsCommand,
+        searchCommentsCommand,
+        advancedSearchCommand,
+        validateCommentsCommand,
+        validateWorkspaceCommand,
+        statusBarManager,
+        treeView,
+        reminderManager
+    );
 }
 
 /**

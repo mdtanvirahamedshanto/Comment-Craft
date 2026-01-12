@@ -37,8 +37,103 @@
         "command": "commentCraft.formatComments",
         "title": "Comment Craft: Format Comments",
         "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.jumpToNextTag",
+        "title": "Jump to Next Tag",
+        "category": "Comment Craft",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "commentCraft.jumpToPreviousTag",
+        "title": "Jump to Previous Tag",
+        "category": "Comment Craft",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "commentCraft.listTagsInFile",
+        "title": "List Tags in Current File",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.toggleTagVisibility",
+        "title": "Toggle Tag Visibility",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.markAsDone",
+        "title": "Mark Tag as Done",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.exportTags",
+        "title": "Export Tags",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.scanWorkspace",
+        "title": "Scan Workspace for Tags",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.refreshTreeView",
+        "title": "Refresh Tag Tree",
+        "category": "Comment Craft",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "commentCraft.insertTemplate",
+        "title": "Insert Comment Template",
+        "category": "Comment Craft",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "commentCraft.showStatistics",
+        "title": "Show Comment Statistics",
+        "category": "Comment Craft",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "commentCraft.searchComments",
+        "title": "Search Comments",
+        "category": "Comment Craft",
+        "icon": "$(search)"
+      },
+      {
+        "command": "commentCraft.advancedSearch",
+        "title": "Advanced Comment Search",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.validateComments",
+        "title": "Validate Comments in File",
+        "category": "Comment Craft",
+        "icon": "$(check)"
+      },
+      {
+        "command": "commentCraft.validateWorkspace",
+        "title": "Validate Comments in Workspace",
+        "category": "Comment Craft"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "commentCraft.tagTree",
+          "name": "Comment Tags",
+          "when": "commentCraft.enableTreeView == true"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "commentCraft",
+          "title": "Comment Craft",
+          "icon": "images/icon.png"
+        }
+      ]
+    },
     "menus": {
       "editor/context": [
         {
@@ -50,8 +145,28 @@
           "command": "commentCraft.formatComments",
           "when": "editorTextFocus",
           "group": "commentCraft"
+        },
+        {
+          "command": "commentCraft.markAsDone",
+          "when": "editorTextFocus",
+          "group": "commentCraft"
         }
       ],
+      "view/title": [
+        {
+          "command": "commentCraft.refreshTreeView",
+          "when": "view == commentCraft.tagTree",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "commentCraft.jumpToNextTag",
+          "when": "view == commentCraft.tagTree",
+          "group": "inline"
+        }
+      ]
+    },
       "commandPalette": [
         {
           "command": "commentCraft.generateComment",
@@ -69,6 +184,18 @@
         "key": "ctrl+alt+c",
         "mac": "cmd+alt+c",
         "when": "editorHasSelection"
+      },
+      {
+        "command": "commentCraft.jumpToNextTag",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "commentCraft.jumpToPreviousTag",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p",
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {
@@ -106,21 +233,48 @@
           "description": "Whether the plaintext comment highlighter should be active",
           "default": false
         },
+        "commentCraft.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable Comment Craft features"
+        },
         "commentCraft.tags": {
           "type": "array",
           "description": "Tags which are used to color the comments. Changes require a restart of VS Code to take effect",
           "default": [
             {
-              "tag": "!",
-              "color": "#FF2D00",
+              "tag": "TODO",
+              "pattern": "\\bTODO\\b[:\\s]?",
+              "color": "#d19a66",
               "strikethrough": false,
               "underline": false,
               "backgroundColor": "transparent",
+              "bold": true,
+              "italic": false
+            },
+            {
+              "tag": "FIXME",
+              "pattern": "\\bFIXME\\b[:\\s]?",
+              "color": "#e06c75",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "#2a1f1f",
               "bold": false,
               "italic": false
             },
             {
-              "tag": "?",
+              "tag": "BUG",
+              "pattern": "\\bBUG\\b[:\\s]?",
+              "color": "#e06c75",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "#2a1f1f",
+              "bold": true,
+              "italic": false
+            },
+            {
+              "tag": "NOTE",
+              "pattern": "\\bNOTE\\b[:\\s]?",
               "color": "#3498DB",
               "strikethrough": false,
               "underline": false,
@@ -129,17 +283,19 @@
               "italic": false
             },
             {
-              "tag": "//",
-              "color": "#474747",
-              "strikethrough": true,
+              "tag": "HACK",
+              "pattern": "\\bHACK\\b[:\\s]?",
+              "color": "#f39c12",
+              "strikethrough": false,
               "underline": false,
               "backgroundColor": "transparent",
               "bold": false,
-              "italic": false
+              "italic": true
             },
             {
-              "tag": "todo",
-              "color": "#FF8C00",
+              "tag": "OPTIMIZE",
+              "pattern": "\\bOPTIMIZE\\b[:\\s]?",
+              "color": "#9b59b6",
               "strikethrough": false,
               "underline": false,
               "backgroundColor": "transparent",
@@ -147,7 +303,48 @@
               "italic": false
             },
             {
-              "tag": "*",
+              "tag": "URGENT",
+              "pattern": "\\bURGENT\\b[:\\s]?",
+              "color": "#ffffff",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "#d9534f",
+              "bold": true,
+              "italic": false
+            },
+            {
+              "tag": "REVIEW",
+              "pattern": "\\bREVIEW\\b[:\\s]?",
+              "color": "#3498DB",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "DEPRECATED",
+              "pattern": "\\bDEPRECATED\\b[:\\s]?",
+              "color": "#95a5a6",
+              "strikethrough": true,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "DONE",
+              "pattern": "\\bDONE\\b[:\\s]?",
+              "color": "#98C379",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "COMPLETE",
+              "pattern": "\\bCOMPLETE\\b[:\\s]?",
               "color": "#98C379",
               "strikethrough": false,
               "underline": false,
@@ -156,8 +353,86 @@
               "italic": false
             }
           ]
+        },
+        "commentCraft.matchOnlyInComments": {
+          "type": "boolean",
+          "default": true,
+          "description": "Only match tags inside comment blocks"
+        },
+        "commentCraft.scanWorkspaceOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Scan entire workspace for tags on open (disabled by default for privacy)"
+        },
+        "commentCraft.showInStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show tag counts in status bar"
+        },
+        "commentCraft.enableTreeView": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable tree view sidebar for tag navigation"
+        },
+        "commentCraft.showGutterMarkers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show colored markers in gutter and overview ruler"
+        },
+        "commentCraft.showOverviewRuler": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show markers in overview ruler"
+        },
+        "commentCraft.enableCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable CodeLens actions above tags"
+        },
+        "commentCraft.enableHighContrast": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use high-contrast colors for accessibility"
+        },
+        "commentCraft.telemetry": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable telemetry (opt-in only)"
+        },
+        "commentCraft.savedFilters": {
+          "type": "array",
+          "default": [],
+          "description": "Saved filter presets for tag filtering"
+        },
+        "commentCraft.githubIntegration": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable GitHub issue integration"
+        },
+        "commentCraft.jiraIntegration": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Jira integration"
+        },
+        "commentCraft.enableReminders": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable reminders for urgent tags"
+        },
+        "commentCraft.reminderInterval": {
+          "type": "number",
+          "default": 60,
+          "description": "Reminder check interval in minutes"
+        },
+        "commentCraft.reminderDaysThreshold": {
+          "type": "number",
+          "default": 7,
+          "description": "Days threshold for TODO reminder"
         }
       }
+    },
+    "codeLens": {
+      "language": "*"
     }
   },
   "scripts": {

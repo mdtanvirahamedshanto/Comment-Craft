@@ -6,3 +6,6 @@ node_modules
 .DS_Store
 *.log
 
+featurelist.md
+
+FEATURES_IMPLEMENTED.md
