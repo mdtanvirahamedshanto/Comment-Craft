@@ -1,6 +1,18 @@
 # Additional Features Added to Comment Craft
 
+<div align="center">
+
+**Advanced features beyond the core feature list**
+
+[Back to README](README.md) • [Features Status](FEATURES_IMPLEMENTED.md)
+
+</div>
+
+---
+
 ## 🎉 New Features Implemented
+
+**6 Additional Features** that enhance the Comment Craft experience beyond the original requirements.
 
 ### 1. ✅ Comment Templates System
 **File:** `src/commentTemplates.ts`

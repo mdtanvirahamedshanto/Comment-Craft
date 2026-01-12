@@ -1,7 +1,7 @@
 {
   "name": "comment-craft",
   "displayName": "Comment Craft",
-  "description": "Craft beautiful and professional code comments with ease. Includes comment highlighting, generation, and formatting features.",
+  "description": "Craft beautiful and professional code comments with intelligent highlighting, generation, formatting, templates, statistics, validation, and comprehensive tag management. Supports 150+ languages with advanced features like search, reminders, and integrations.",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.108.0"

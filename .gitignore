@@ -5,7 +5,3 @@ node_modules
 *.vsix
 .DS_Store
 *.log
-
-featurelist.md
-
-FEATURES_IMPLEMENTED.md
