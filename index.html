@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Comment Craft - Craft beautiful and professional code comments with intelligent highlighting, generation, formatting, and comprehensive tag management for VS Code">
+    <title>Comment Craft - Professional Code Commenting for VS Code</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Custom animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Code block styling */
+        .code-block {
+            background: #1e293b;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+        
+        /* Feature card hover effect */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Tag color examples */
+        .tag-todo { color: #d19a66; }
+        .tag-fixme { color: #e06c75; }
+        .tag-bug { color: #e06c75; }
+        .tag-note { color: #e91e63; }
+        .tag-hack { color: #f39c12; }
+        .tag-optimize { color: #f1c40f; }
+        .tag-urgent { color: #ffffff; background: #d9534f; padding: 2px 6px; border-radius: 4px; }
+        .tag-review { color: #3498DB; }
+        .tag-deprecated { color: #9b59b6; text-decoration: line-through; }
+        .tag-done { color: #98C379; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <img src="images/icon.png" alt="Comment Craft" class="h-10 w-10">
+                    <span class="text-xl font-bold gradient-text">Comment Craft</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features" class="text-gray-700 hover:text-primary-600 transition">Features</a>
+                    <a href="#installation" class="text-gray-700 hover:text-primary-600 transition">Installation</a>
+                    <a href="#usage" class="text-gray-700 hover:text-primary-600 transition">Usage</a>
+                    <a href="#docs" class="text-gray-700 hover:text-primary-600 transition">Documentation</a>
+                    <a href="https://github.com/mdtanvirahamedshanto/comment-craft" target="_blank" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition">
+                        <i class="fab fa-github mr-2"></i>GitHub
+                    </a>
+                </div>
+                <button class="md:hidden text-gray-700" id="mobile-menu-btn">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="hidden md:hidden bg-white border-t" id="mobile-menu">
+            <div class="px-4 py-4 space-y-3">
+                <a href="#features" class="block text-gray-700 hover:text-primary-600">Features</a>
+                <a href="#installation" class="block text-gray-700 hover:text-primary-600">Installation</a>
+                <a href="#usage" class="block text-gray-700 hover:text-primary-600">Usage</a>
+                <a href="#docs" class="block text-gray-700 hover:text-primary-600">Documentation</a>
+                <a href="https://github.com/mdtanvirahamedshanto/comment-craft" target="_blank" class="block bg-primary-600 text-white px-4 py-2 rounded-lg text-center">
+                    <i class="fab fa-github mr-2"></i>GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-primary-600 via-primary-700 to-purple-700 text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center animate-fade-in-up">
+                <div class="flex justify-center mb-6">
+                    <img src="images/icon.png" alt="Comment Craft" class="h-24 w-24">
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                    Comment Craft
+                </h1>
+                <p class="text-xl md:text-2xl mb-8 text-primary-100 max-w-3xl mx-auto">
+                    Craft beautiful and professional code comments with intelligent highlighting, generation, formatting, and comprehensive tag management
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="https://marketplace.visualstudio.com/items?itemName=mdtanvirahamedshanto.comment-craft" target="_blank" class="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition text-lg">
+                        <i class="fas fa-download mr-2"></i>Install from Marketplace
+                    </a>
+                    <a href="https://github.com/mdtanvirahamedshanto/comment-craft" target="_blank" class="bg-primary-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-900 transition text-lg border border-primary-500">
+                        <i class="fab fa-github mr-2"></i>View on GitHub
+                    </a>
+                </div>
+                <div class="mt-8 flex flex-wrap justify-center gap-4 text-sm">
+                    <span class="bg-white/20 px-4 py-2 rounded-full">
+                        <i class="fas fa-code mr-2"></i>150+ Languages
+                    </span>
+                    <span class="bg-white/20 px-4 py-2 rounded-full">
+                        <i class="fas fa-star mr-2"></i>VS Code Extension
+                    </span>
+                    <span class="bg-white/20 px-4 py-2 rounded-full">
+                        <i class="fas fa-shield-alt mr-2"></i>MIT License
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Powerful Features</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Everything you need to create, manage, and maintain professional code comments
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Intelligent Highlighting</h3>
+                    <p class="text-gray-600">
+                        Color-coded tags with customizable styling. Support for text-based and symbol-based tags with gutter markers and overview ruler.
+                    </p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Smart Generation</h3>
+                    <p class="text-gray-600">
+                        Automatically generate professional comments with multiple styles: Standard, JSDoc, JavaDoc, and Doxygen.
+                    </p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Statistics Dashboard</h3>
+                    <p class="text-gray-600">
+                        Comprehensive analytics for your codebase with tag counts, percentages, and visual progress indicators.
+                    </p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Advanced Search</h3>
+                    <p class="text-gray-600">
+                        Powerful search with regex support, tag filtering, file pattern matching, and direct navigation to results.
+                    </p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Comment Validation</h3>
+                    <p class="text-gray-600">
+                        Ensure code quality by detecting undocumented functions, incomplete TODOs, and commented-out code.
+                    </p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-file-code"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Template System</h3>
+                    <p class="text-gray-600">
+                        Pre-built templates for common documentation patterns: functions, classes, TODOs, FIXMEs, and more.
+                    </p>
+                </div>
+                
+                <!-- Feature 7 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Tag Management</h3>
+                    <p class="text-gray-600">
+                        Complete tag lifecycle with tree view, status bar, CodeLens actions, export capabilities, and filtering.
+                    </p>
+                </div>
+                
+                <!-- Feature 8 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Smart Reminders</h3>
+                    <p class="text-gray-600">
+                        Never miss important items with reminders for URGENT tags and notifications for old TODO items.
+                    </p>
+                </div>
+                
+                <!-- Feature 9 -->
+                <div class="feature-card bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-4xl mb-4">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Integrations</h3>
+                    <p class="text-gray-600">
+                        Seamless integration with GitHub and Jira. Export to JSON, CSV, or Markdown formats.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Tag Examples Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Supported Tags</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Visual categorization with both text-based and symbol-based tags
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Text-based Tags -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-2xl font-bold mb-4">Text-Based Tags</h3>
+                    <div class="code-block text-sm text-gray-300 font-mono">
+                        <div class="mb-2"><span class="tag-todo font-bold">// TODO:</span> implement feature</div>
+                        <div class="mb-2"><span class="tag-fixme">// FIXME:</span> broken logic</div>
+                        <div class="mb-2"><span class="tag-bug font-bold">// BUG:</span> crashes on empty input</div>
+                        <div class="mb-2"><span class="tag-note">// NOTE:</span> important information</div>
+                        <div class="mb-2"><span class="tag-hack italic">// HACK:</span> temporary solution</div>
+                        <div class="mb-2"><span class="tag-optimize">// OPTIMIZE:</span> performance improvement</div>
+                        <div class="mb-2"><span class="tag-urgent font-bold">// URGENT:</span> fix immediately</div>
+                        <div class="mb-2"><span class="tag-review">// REVIEW:</span> needs code review</div>
+                        <div class="mb-2"><span class="tag-deprecated">// DEPRECATED:</span> use newFunction()</span></div>
+                        <div class="mb-2"><span class="tag-done">// DONE:</span> feature completed</div>
+                    </div>
+                </div>
+                
+                <!-- Symbol-based Tags -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h3 class="text-2xl font-bold mb-4">Symbol-Based Tags</h3>
+                    <div class="code-block text-sm text-gray-300 font-mono">
+                        <div class="mb-2"><span class="text-red-500 font-bold">// !</span> Critical issue</div>
+                        <div class="mb-2"><span class="text-blue-400">// ?</span> Needs review</div>
+                        <div class="mb-2"><span class="text-green-400">// *</span> Completed</div>
+                        <div class="mb-2"><span class="text-yellow-400">// ^</span> Improve performance</div>
+                        <div class="mb-2"><span class="text-pink-400">// &</span> Important note</div>
+                        <div class="mb-2"><span class="text-purple-400 line-through">// ~</span> Deprecated code</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Installation Section -->
+    <section id="installation" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Installation</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Get started with Comment Craft in just a few clicks
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Method 1 -->
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-3xl mb-4">
+                        <i class="fas fa-store"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">VS Code Marketplace</h3>
+                    <p class="text-gray-600 mb-4">
+                        The easiest way to install Comment Craft
+                    </p>
+                    <ol class="text-sm text-gray-700 space-y-2 mb-4">
+                        <li>1. Open VS Code</li>
+                        <li>2. Go to Extensions (Ctrl+Shift+X)</li>
+                        <li>3. Search "Comment Craft"</li>
+                        <li>4. Click Install</li>
+                    </ol>
+                    <a href="https://marketplace.visualstudio.com/items?itemName=mdtanvirahamedshanto.comment-craft" target="_blank" class="inline-block bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition text-sm">
+                        Install Now
+                    </a>
+                </div>
+                
+                <!-- Method 2 -->
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-3xl mb-4">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">From VSIX File</h3>
+                    <p class="text-gray-600 mb-4">
+                        Install from a downloaded package
+                    </p>
+                    <ol class="text-sm text-gray-700 space-y-2 mb-4">
+                        <li>1. Download the .vsix file</li>
+                        <li>2. Open VS Code</li>
+                        <li>3. Extensions → ... → Install from VSIX</li>
+                        <li>4. Select the downloaded file</li>
+                    </ol>
+                </div>
+                
+                <!-- Method 3 -->
+                <div class="bg-gray-50 p-6 rounded-xl">
+                    <div class="text-primary-600 text-3xl mb-4">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Manual Build</h3>
+                    <p class="text-gray-600 mb-4">
+                        Build from source code
+                    </p>
+                    <div class="code-block text-xs mb-4">
+                        <div>git clone https://github.com/</div>
+                        <div>mdtanvirahamedshanto/comment-craft.git</div>
+                        <div>cd comment-craft</div>
+                        <div>npm install</div>
+                        <div>npm run compile</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Usage Section -->
+    <section id="usage" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Quick Start</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Start using Comment Craft in minutes
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Step 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-primary-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold mr-4">1</span>
+                        <h3 class="text-xl font-bold">Generate Comments</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        Select code and generate professional comments automatically
+                    </p>
+                    <div class="code-block text-xs mb-4">
+                        <div class="text-gray-400">// Select code → Right-click</div>
+                        <div class="text-gray-400">// → Comment Craft: Generate Comment</div>
+                        <div class="text-gray-400">// Or use: Ctrl+Alt+C</div>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-primary-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold mr-4">2</span>
+                        <h3 class="text-xl font-bold">Add Tags</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        Use tags to categorize and highlight your comments
+                    </p>
+                    <div class="code-block text-xs mb-4">
+                        <div><span class="tag-todo font-bold">// TODO:</span> implement feature</div>
+                        <div><span class="tag-fixme">// FIXME:</span> fix bug</div>
+                        <div><span class="tag-note">// NOTE:</span> important info</div>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-primary-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold mr-4">3</span>
+                        <h3 class="text-xl font-bold">Navigate Tags</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        Use the tree view or keyboard shortcuts to navigate
+                    </p>
+                    <div class="code-block text-xs mb-4">
+                        <div class="text-gray-400">// Open Comment Craft sidebar</div>
+                        <div class="text-gray-400">// Jump to next: Ctrl+Alt+N</div>
+                        <div class="text-gray-400">// Jump to previous: Ctrl+Alt+P</div>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <span class="bg-primary-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold mr-4">4</span>
+                        <h3 class="text-xl font-bold">View Statistics</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">
+                        Get insights into your codebase documentation
+                    </p>
+                    <div class="code-block text-xs mb-4">
+                        <div class="text-gray-400">// Command Palette</div>
+                        <div class="text-gray-400">// → Comment Craft: Show Statistics</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Documentation Section -->
+    <section id="docs" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">Documentation</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Comprehensive guides and references
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <a href="README.md" target="_blank" class="bg-gray-50 p-6 rounded-xl hover:bg-primary-50 transition group">
+                    <div class="text-primary-600 text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">README</h3>
+                    <p class="text-gray-600 text-sm">Complete documentation and overview</p>
+                </a>
+                
+                <a href="FEATURES_IMPLEMENTED.md" target="_blank" class="bg-gray-50 p-6 rounded-xl hover:bg-primary-50 transition group">
+                    <div class="text-primary-600 text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-list-check"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Features</h3>
+                    <p class="text-gray-600 text-sm">Implementation status and details</p>
+                </a>
+                
+                <a href="TAG_REFERENCE.md" target="_blank" class="bg-gray-50 p-6 rounded-xl hover:bg-primary-50 transition group">
+                    <div class="text-primary-600 text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Tag Reference</h3>
+                    <p class="text-gray-600 text-sm">Complete tag documentation</p>
+                </a>
+                
+                <a href="QUICKSTART.md" target="_blank" class="bg-gray-50 p-6 rounded-xl hover:bg-primary-50 transition group">
+                    <div class="text-primary-600 text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Quick Start</h3>
+                    <p class="text-gray-600 text-sm">Get started quickly</p>
+                </a>
+                
+                <a href="CHANGELOG.md" target="_blank" class="bg-gray-50 p-6 rounded-xl hover:bg-primary-50 transition group">
+                    <div class="text-primary-600 text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Changelog</h3>
+                    <p class="text-gray-600 text-sm">Version history and updates</p>
+                </a>
+                
+                <a href="https://github.com/mdtanvirahamedshanto/comment-craft/issues" target="_blank" class="bg-gray-50 p-6 rounded-xl hover:bg-primary-50 transition group">
+                    <div class="text-primary-600 text-3xl mb-4 group-hover:scale-110 transition">
+                        <i class="fas fa-bug"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Issues</h3>
+                    <p class="text-gray-600 text-sm">Report bugs and request features</p>
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Languages Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4">150+ Languages Supported</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Works with virtually any programming language
+                </p>
+            </div>
+            
+            <div class="bg-white p-8 rounded-xl shadow-sm">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center">
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">JavaScript</div>
+                        <div class="text-sm text-gray-500">TypeScript</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">Python</div>
+                        <div class="text-sm text-gray-500">Java</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">C / C++</div>
+                        <div class="text-sm text-gray-500">C#</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">Go</div>
+                        <div class="text-sm text-gray-500">Rust</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">PHP</div>
+                        <div class="text-sm text-gray-500">Ruby</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">Swift</div>
+                        <div class="text-sm text-gray-500">Kotlin</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">HTML</div>
+                        <div class="text-sm text-gray-500">CSS</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">SQL</div>
+                        <div class="text-sm text-gray-500">YAML</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">Shell</div>
+                        <div class="text-sm text-gray-500">PowerShell</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">React</div>
+                        <div class="text-sm text-gray-500">Vue.js</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">Dart</div>
+                        <div class="text-sm text-gray-500">Scala</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="font-bold text-gray-700">And 138+ more!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-br from-primary-600 via-primary-700 to-purple-700 text-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold mb-4">Ready to Craft Better Comments?</h2>
+            <p class="text-xl mb-8 text-primary-100">
+                Join developers who are creating better-documented, more maintainable code
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="https://marketplace.visualstudio.com/items?itemName=mdtanvirahamedshanto.comment-craft" target="_blank" class="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition text-lg">
+                    <i class="fas fa-download mr-2"></i>Install Now
+                </a>
+                <a href="https://github.com/mdtanvirahamedshanto/comment-craft" target="_blank" class="bg-primary-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-900 transition text-lg border border-primary-500">
+                    <i class="fab fa-github mr-2"></i>Star on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <img src="images/icon.png" alt="Comment Craft" class="h-8 w-8">
+                        <span class="text-xl font-bold text-white">Comment Craft</span>
+                    </div>
+                    <p class="text-sm">
+                        Professional code commenting for VS Code
+                    </p>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-white mb-4">Resources</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="README.md" target="_blank" class="hover:text-white transition">Documentation</a></li>
+                        <li><a href="CHANGELOG.md" target="_blank" class="hover:text-white transition">Changelog</a></li>
+                        <li><a href="https://github.com/mdtanvirahamedshanto/comment-craft/issues" target="_blank" class="hover:text-white transition">Issues</a></li>
+                        <li><a href="LICENSE" target="_blank" class="hover:text-white transition">License</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-white mb-4">Community</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="https://github.com/mdtanvirahamedshanto/comment-craft" target="_blank" class="hover:text-white transition">GitHub</a></li>
+                        <li><a href="https://github.com/mdtanvirahamedshanto/comment-craft/issues" target="_blank" class="hover:text-white transition">Report Bug</a></li>
+                        <li><a href="https://github.com/mdtanvirahamedshanto/comment-craft/issues" target="_blank" class="hover:text-white transition">Request Feature</a></li>
+                        <li><a href="https://github.com/mdtanvirahamedshanto/comment-craft" target="_blank" class="hover:text-white transition">Contribute</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-white mb-4">Author</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li>Md Tanvir Ahamed Shanto</li>
+                        <li><a href="https://github.com/mdtanvirahamedshanto" target="_blank" class="hover:text-white transition">@mdtanvirahamedshanto</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 text-center text-sm">
+                <p>&copy; 2024 Comment Craft. Made with ❤️ for developers who care about code quality.</p>
+                <p class="mt-2">Licensed under <a href="LICENSE" target="_blank" class="text-primary-400 hover:text-primary-300">MIT License</a></p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Mobile Menu Script -->
+    <script>
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // Close mobile menu when clicking a link
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
