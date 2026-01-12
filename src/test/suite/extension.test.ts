@@ -5,11 +5,11 @@ suite('Extension Test Suite', () => {
     vscode.window.showInformationMessage('Start all tests.');
 
     test('Extension should be present', () => {
-        assert.ok(vscode.extensions.getExtension('yourpublishername.comment-craft'));
+        assert.ok(vscode.extensions.getExtension('mdtanvirahamedshanto.comment-craft'));
     });
 
     test('Extension should activate', async () => {
-        const extension = vscode.extensions.getExtension('yourpublishername.comment-craft');
+        const extension = vscode.extensions.getExtension('mdtanvirahamedshanto.comment-craft');
         if (extension) {
             await extension.activate();
             assert.ok(extension.isActive);

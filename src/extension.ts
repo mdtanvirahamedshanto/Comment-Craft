@@ -77,7 +77,7 @@ export async function activate(context: vscode.ExtensionContext) {
     // * IMPORTANT:
     // * To avoid calling update too often,
     // * set a timer for 100ms to wait before updating decorations
-    var timeout: NodeJS.Timer;
+    var timeout: NodeJS.Timeout | undefined;
     function triggerUpdateDecorations() {
         if (timeout) {
             clearTimeout(timeout);
