@@ -138,6 +138,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.1] - 2026-01-12
+
+### Fixed
+- 🔧 Fixed infinite re-rendering issue - extension now only updates when document actually changes
+- 🔧 Improved performance with document version and text comparison checks
+- 🔧 Fixed JSX/TSX comment highlighting (e.g., `{/* TODO: fix */}`)
+- 🔧 Fixed FIX tag matching (now properly matches "FIX:" in comments)
+- 🔧 Improved tag matching accuracy - stricter word boundary matching prevents false positives
+- 🔧 Fixed multi-line comment highlighting
+- 🔧 Reduced excessive logging - only critical errors are logged now
+- 🔧 Fixed Output panel infinite loop on Ubuntu
+- 🔧 Better handling of non-file editors (output panels, diff views, etc.)
+
+### Changed
+- ⚡ Increased debounce time from 100ms to 500ms for better performance
+- 🧹 Removed verbose debug logging
+- 🎯 More accurate tag matching with word boundary checks
+
+### Technical Improvements
+- Added document version tracking to prevent unnecessary updates
+- Added text comparison checks in both trigger and update functions
+- Improved regex pattern matching for better accuracy
+- Enhanced comment validation to ensure decorations only apply to actual comments
+
+---
+
 ## [Unreleased]
 
 ### Planned Features
@@ -153,10 +179,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **0.1.1** - Bug fixes and performance improvements
 - **0.1.0** - Initial release with comprehensive feature set
 
 ---
 
 For detailed feature documentation, see:
-- [FEATURES_IMPLEMENTED.md](FEATURES_IMPLEMENTED.md)
-- [ADDITIONAL_FEATURES.md](ADDITIONAL_FEATURES.md)
+- [README.md](README.md)
+- [TAG_REFERENCE.md](TAG_REFERENCE.md)
