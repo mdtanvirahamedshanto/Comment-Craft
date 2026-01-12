@@ -240,7 +240,7 @@ export async function activate(context: vscode.ExtensionContext) {
         }
         
         const tags = tagScanner.getTags();
-        const fileTags: any[] = [];
+        const fileTags: Array<{ label: string; description: string; tagInfo: TagInfo }> = [];
         
         for (const [tagName, tagInfos] of tags.entries()) {
             for (const tagInfo of tagInfos) {
@@ -292,7 +292,7 @@ export async function activate(context: vscode.ExtensionContext) {
         
         // Find tag in current line
         const config = vscode.workspace.getConfiguration('commentCraft');
-        const tagConfigs = config.get<any[]>('tags', []);
+        const tagConfigs = config.get<Array<{ tag: string; pattern?: string }>>('tags', []);
         
         for (const tagConfig of tagConfigs) {
             const pattern = tagConfig.pattern || `\\b${tagConfig.tag}\\b[:\\s]?`;
@@ -436,7 +436,7 @@ export async function activate(context: vscode.ExtensionContext) {
         const tags = tagScanner.getTags();
         const fileTags: TagInfo[] = [];
         
-        for (const [_tagName, tagInfos] of tags.entries()) {
+        for (const tagInfos of tags.values()) {
             for (const tagInfo of tagInfos) {
                 if (tagInfo.filePath === editor.document.uri.fsPath) {
                     fileTags.push(tagInfo);
@@ -605,6 +605,7 @@ async function generateComment(text: string, languageId: string): Promise<string
  * Gets the comment prefix for a given language
  */
     function getCommentPrefix(languageId: string, _style: string): string {
+        void _style; // Mark as intentionally unused (reserved for future use)
     const prefixes: { [key: string]: string } = {
         // Languages using //
         'javascript': '//',

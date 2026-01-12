@@ -153,7 +153,7 @@ export class TagTreeItem extends vscode.TreeItem {
         
         if (tagName) {
             const config = vscode.workspace.getConfiguration('commentCraft');
-            const tags = config.get<any[]>('tags', []);
+            const tags = config.get<Array<{ tag: string; pattern?: string }>>('tags', []);
             const tagConfig = tags.find(t => t.tag === tagName);
             if (tagConfig) {
                 this.iconPath = new vscode.ThemeIcon('tag', new vscode.ThemeColor('textLink.foreground'));

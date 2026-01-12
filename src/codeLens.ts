@@ -11,6 +11,7 @@ export class TagCodeLensProvider implements vscode.CodeLensProvider {
     }
 
     provideCodeLenses(document: vscode.TextDocument, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens[]> {
+        void _token; // Mark as intentionally unused
         const config = vscode.workspace.getConfiguration('commentCraft');
         const enabled = config.get<boolean>('enabled', true);
         const enableCodeLens = config.get<boolean>('enableCodeLens', true);
@@ -55,6 +56,7 @@ export class TagCodeLensProvider implements vscode.CodeLensProvider {
     }
 
     resolveCodeLens(codeLens: vscode.CodeLens, _token: vscode.CancellationToken): vscode.ProviderResult<vscode.CodeLens> {
+        void _token; // Mark as intentionally unused
         return codeLens;
     }
 

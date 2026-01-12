@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as fs from 'fs';
 import { TagScanner, TagInfo } from './tagScanner';
 
 export class TagExporter {
@@ -64,7 +63,20 @@ export class TagExporter {
     }
 
     private exportJSON(tags: Map<string, TagInfo[]>): string {
-        const data: any = {
+        const data: { 
+            exportedAt: string; 
+            tags: Array<{ 
+                name: string; 
+                count: number; 
+                occurrences: Array<{ 
+                    file: string; 
+                    line: number; 
+                    column: number; 
+                    text: string; 
+                    fullLine: string 
+                }> 
+            }> 
+        } = {
             exportedAt: new Date().toISOString(),
             tags: []
         };

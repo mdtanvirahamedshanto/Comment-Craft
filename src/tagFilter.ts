@@ -73,7 +73,7 @@ export class TagFilter {
 
     static saveFilter(name: string, options: FilterOptions): void {
         const config = vscode.workspace.getConfiguration('commentCraft');
-        const savedFilters = config.get<any[]>('savedFilters', []);
+        const savedFilters = config.get<Array<{ name: string; options: FilterOptions }>>('savedFilters', []);
         
         savedFilters.push({
             name: name,

@@ -159,7 +159,7 @@ export const CANONICAL_TAGS: TagDefinition[] = [
 /**
  * Get default tag configuration for package.json
  */
-export function getDefaultTags(): any[] {
+export function getDefaultTags(): Array<{ tag: string; pattern: string; color: string; [key: string]: unknown }> {
     return CANONICAL_TAGS.map(tag => ({
         tag: tag.tag,
         pattern: tag.pattern,

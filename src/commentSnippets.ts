@@ -13,6 +13,7 @@ export class CommentSnippets {
             // Note: VS Code snippets are typically defined in package.json
             // This is a programmatic approach for dynamic snippets
             for (const _snippet of snippets) {
+                void _snippet; // Mark as intentionally unused (placeholder for future implementation)
                 disposables.push(
                     vscode.languages.registerCompletionItemProvider(
                         { scheme: 'file', language: language },
