@@ -195,21 +195,76 @@ async function generateComment(text: string, languageId: string): Promise<string
  */
 function getCommentPrefix(languageId: string, style: string): string {
     const prefixes: { [key: string]: string } = {
+        // Languages using //
         'javascript': '//',
         'typescript': '//',
         'java': '//',
         'c': '//',
         'cpp': '//',
         'csharp': '//',
+        'go': '//',
+        'rust': '//',
+        'swift': '//',
+        'kotlin': '//',
+        'dart': '//',
+        'scala': '//',
+        'fsharp': '//',
+        'groovy': '//',
+        'objective-c': '//',
+        'objective-cpp': '//',
+        'scss': '//',
+        'less': '//',
+        'sass': '//',
+        
+        // Languages using #
         'python': '#',
         'ruby': '#',
         'shellscript': '#',
         'yaml': '#',
+        'php': '#',
+        'perl': '#',
+        'r': '#',
+        'powershell': '#',
+        'elixir': '#',
+        'julia': '#',
+        'makefile': '#',
+        'dockerfile': '#',
+        'toml': '#',
+        'ini': '#',
+        'properties': '#',
+        'coffeescript': '#',
+        'nim': '#',
+        
+        // Languages using --
+        'lua': '--',
+        'haskell': '--',
+        'sql': '--',
+        'ada': '--',
+        
+        // Languages using %
+        'matlab': '%',
+        'erlang': '%',
+        
+        // Languages using ;
+        'scheme': ';',
+        'racket': ';',
+        'clojure': ';',
+        
+        // Languages using '
+        'vb': "'",
+        'vbnet': "'",
+        'vbscript': "'",
+        
+        // Languages using !
+        'fortran': '!',
+        
+        // Languages using <!--
         'html': '<!--',
         'xml': '<!--',
-        'css': '/*',
-        'scss': '//',
-        'less': '//'
+        'markdown': '<!--',
+        
+        // Languages using /*
+        'css': '/*'
     };
 
     return prefixes[languageId] || '//';
