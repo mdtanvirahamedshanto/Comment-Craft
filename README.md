@@ -37,19 +37,55 @@ Comment Craft is a powerful VS Code extension that transforms code commenting in
 
 ### 🎨 Intelligent Comment Highlighting
 
-Transform your comments into visually categorized annotations with support for 11+ default tags:
+Transform your comments into visually categorized annotations with support for **both text-based and symbol-based tags**:
 
-- **TODO** - Track tasks and future improvements
-- **FIXME** - Mark code that needs fixing
-- **BUG** - Identify known bugs
-- **NOTE** - Important information
-- **HACK** - Temporary workarounds
-- **OPTIMIZE** - Performance improvements needed
-- **URGENT** - Critical items requiring immediate attention
-- **REVIEW** - Code that needs review
-- **DEPRECATED** - Outdated code
-- **DONE** - Completed tasks
-- **COMPLETE** - Finished items
+#### Text-Based Tags (with Symbol Support)
+
+- **TODO** (☐ ➤ • 📌) - Track tasks and future improvements - *Mustard*
+- **FIXME** (🔧 ❗ 🛠) - Mark code that needs fixing - *Red*
+- **BUG** (🐞 ✖ ⛔) - Identify known bugs - *Red*
+- **NOTE** (ℹ 📝 📄) - Important information - *Pink*
+- **HACK** (⚠ ☢ 🚧) - Temporary workarounds - *Yellow*
+- **OPTIMIZE** (⚡ 📈 🚀) - Performance improvements needed - *Yellow*
+- **URGENT** (🚨 🔥 ‼) - Critical items requiring immediate attention - *Red*
+- **REVIEW** (👀 🔍 🧐) - Code that needs review - *Blue*
+- **DEPRECATED** (☠ 🗑 ⚰) - Outdated code - *Purple*
+- **DONE** (✔ ✅ ☑) - Completed tasks - *Green*
+- **COMPLETE** (🏁 🎉 ✓✓) - Finished items - *Green*
+
+#### Symbol-Based Tags
+
+- **!** - Critical / Error (BUG, FIXME, URGENT) - *Red*
+- **?** - Question / Review - *Blue*
+- **\*** - Completed (DONE, COMPLETE) - *Green*
+- **^** - Improve / Warning (OPTIMIZE, HACK) - *Yellow*
+- **&** - Note / Info - *Pink*
+- **~** - Deprecated - *Purple*
+
+#### Flexible Tag Matching
+
+Comment Craft supports multiple tag formats:
+
+```javascript
+// Text-based tags
+// TODO: implement feature
+// @todo add validation
+// ☐ TODO - refactor code
+
+// Symbol-based tags
+// ! Critical issue
+// ? Needs review
+// * Completed feature
+// ^ Performance improvement
+// & Important note
+// ~ Deprecated code
+
+// With aliases
+// FIXME: broken logic
+// fix: memory leak
+// @fixme null pointer
+// 🔧 FIXME - needs attention
+```
 
 **Visual Features:**
 - Color-coded tags with customizable styling
@@ -220,19 +256,44 @@ vsce package
 
 ### 2. Use Comment Highlighting
 
-Simply add tags to your comments:
+Add tags to your comments using **text-based** or **symbol-based** formats:
 
 ```javascript
+// Text-based tags (with optional symbols)
 // TODO: Implement user authentication
+// ☐ TODO: Add validation
+// @todo improve UX
 // FIXME: Memory leak in this function
+// 🔧 FIXME: Broken logic
 // NOTE: This is a workaround for issue #123
+// ℹ NOTE: Important info
 // BUG: Crashes on empty input
-// HACK: Temporary solution, needs refactoring
+// 🐞 BUG: Production issue
+// HACK: Temporary solution
+// ⚠ HACK: Needs refactoring
 // OPTIMIZE: This loop can be optimized
-// URGENT: Security vulnerability - fix immediately
-// REVIEW: Needs code review before merge
-// DEPRECATED: Use newFunction() instead
+// ⚡ OPTIMIZE: Performance improvement
+// URGENT: Security vulnerability
+// 🚨 URGENT: Fix immediately
+// REVIEW: Needs code review
+// 👀 REVIEW: Check logic
+// DEPRECATED: Use newFunction()
+// ☠ DEPRECATED: Legacy code
+// DONE: Feature completed
+// ✔ DONE: Task finished
+// COMPLETE: Ready for release
+// 🏁 COMPLETE: All done
+
+// Symbol-based tags (quick notation)
+// ! Critical issue
+// ? Needs review
+// * Completed
+// ^ Improve performance
+// & Important note
+// ~ Deprecated code
 ```
+
+See [TAG_REFERENCE.md](TAG_REFERENCE.md) for complete tag documentation.
 
 ### 3. Navigate Tags
 

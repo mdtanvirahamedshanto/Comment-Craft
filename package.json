@@ -243,7 +243,7 @@
           "default": [
             {
               "tag": "TODO",
-              "pattern": "\\bTODO\\b[:\\s]?",
+              "pattern": "(^|\\s)(☐|➤|•|📌)?\\s*@?(TODO|todo|@todo)\\b\\s*[:\\-]?",
               "color": "#d19a66",
               "strikethrough": false,
               "underline": false,
@@ -253,7 +253,7 @@
             },
             {
               "tag": "FIXME",
-              "pattern": "\\bFIXME\\b[:\\s]?",
+              "pattern": "(^|\\s)(🔧|❗|🛠)?\\s*@?(FIXME|fixme|FIX|fix|@fixme)\\b\\s*[:\\-]?",
               "color": "#e06c75",
               "strikethrough": false,
               "underline": false,
@@ -263,7 +263,7 @@
             },
             {
               "tag": "BUG",
-              "pattern": "\\bBUG\\b[:\\s]?",
+              "pattern": "(^|\\s)(🐞|✖|⛔)?\\s*@?(BUG|bug|@bug|defect|DEFECT)\\b\\s*[:\\-]?",
               "color": "#e06c75",
               "strikethrough": false,
               "underline": false,
@@ -273,8 +273,8 @@
             },
             {
               "tag": "NOTE",
-              "pattern": "\\bNOTE\\b[:\\s]?",
-              "color": "#3498DB",
+              "pattern": "(^|\\s)(ℹ|📝|📄)?\\s*@?(NOTE|note|@note|info|INFO)\\b\\s*[:\\-]?",
+              "color": "#e91e63",
               "strikethrough": false,
               "underline": false,
               "backgroundColor": "transparent",
@@ -283,7 +283,7 @@
             },
             {
               "tag": "HACK",
-              "pattern": "\\bHACK\\b[:\\s]?",
+              "pattern": "(^|\\s)(⚠|☢|🚧)?\\s*@?(HACK|hack|@hack|workaround|WORKAROUND)\\b\\s*[:\\-]?",
               "color": "#f39c12",
               "strikethrough": false,
               "underline": false,
@@ -293,8 +293,8 @@
             },
             {
               "tag": "OPTIMIZE",
-              "pattern": "\\bOPTIMIZE\\b[:\\s]?",
-              "color": "#9b59b6",
+              "pattern": "(^|\\s)(⚡|📈|🚀)?\\s*@?(OPTIMIZE|optimize|@optimize|perf|PERF|performance|PERFORMANCE)\\b\\s*[:\\-]?",
+              "color": "#f1c40f",
               "strikethrough": false,
               "underline": false,
               "backgroundColor": "transparent",
@@ -303,7 +303,7 @@
             },
             {
               "tag": "URGENT",
-              "pattern": "\\bURGENT\\b[:\\s]?",
+              "pattern": "(^|\\s)(🚨|🔥|‼)?\\s*@?(URGENT|urgent|@urgent|critical|CRITICAL|hotfix|HOTFIX)\\b\\s*[:\\-]?",
               "color": "#ffffff",
               "strikethrough": false,
               "underline": false,
@@ -313,7 +313,7 @@
             },
             {
               "tag": "REVIEW",
-              "pattern": "\\bREVIEW\\b[:\\s]?",
+              "pattern": "(^|\\s)(👀|🔍|🧐)?\\s*@?(REVIEW|review|@review|check|CHECK|audit|AUDIT)\\b\\s*[:\\-]?",
               "color": "#3498DB",
               "strikethrough": false,
               "underline": false,
@@ -323,8 +323,8 @@
             },
             {
               "tag": "DEPRECATED",
-              "pattern": "\\bDEPRECATED\\b[:\\s]?",
-              "color": "#95a5a6",
+              "pattern": "(^|\\s)(☠|🗑|⚰)?\\s*@?(DEPRECATED|deprecated|@deprecated|obsolete|OBSOLETE)\\b\\s*[:\\-]?",
+              "color": "#9b59b6",
               "strikethrough": true,
               "underline": false,
               "backgroundColor": "transparent",
@@ -333,7 +333,7 @@
             },
             {
               "tag": "DONE",
-              "pattern": "\\bDONE\\b[:\\s]?",
+              "pattern": "(^|\\s)(✔|✅|☑)?\\s*@?(DONE|done|@done|resolved|RESOLVED)\\b\\s*[:\\-]?",
               "color": "#98C379",
               "strikethrough": false,
               "underline": false,
@@ -343,9 +343,69 @@
             },
             {
               "tag": "COMPLETE",
-              "pattern": "\\bCOMPLETE\\b[:\\s]?",
+              "pattern": "(^|\\s)(🏁|🎉|✓✓)?\\s*@?(COMPLETE|complete|@complete|finished|FINISHED)\\b\\s*[:\\-]?",
               "color": "#98C379",
               "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "!",
+              "pattern": "(^|\\s)!\\s*[:\\-]?",
+              "color": "#FF2D00",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": true,
+              "italic": false
+            },
+            {
+              "tag": "?",
+              "pattern": "(^|\\s)\\?\\s*[:\\-]?",
+              "color": "#3498DB",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "*",
+              "pattern": "(^|\\s)\\*\\s*[:\\-]?",
+              "color": "#98C379",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "^",
+              "pattern": "(^|\\s)\\^\\s*[:\\-]?",
+              "color": "#f1c40f",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "&",
+              "pattern": "(^|\\s)&\\s*[:\\-]?",
+              "color": "#e91e63",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "~",
+              "pattern": "(^|\\s)~\\s*[:\\-]?",
+              "color": "#9b59b6",
+              "strikethrough": true,
               "underline": false,
               "backgroundColor": "transparent",
               "bold": false,

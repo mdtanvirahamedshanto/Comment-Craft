@@ -99,8 +99,46 @@ export class Parser {
                 continue;
             }
 
-            // Find which custom delimiter was used in order to add it to the collection
-            let matchTag = this.tags.find(item => item.tag.toLowerCase() === match[3].toLowerCase());
+            // Find which tag was matched by testing each tag's pattern against the matched text
+            let matchTag: CommentTag | undefined;
+            const matchedText = match[0];
+            
+            // Try to match by testing each tag's pattern
+            for (const tag of this.tags) {
+                try {
+                    // Build a test pattern that matches after comment delimiter
+                    let testPattern = tag.escapedTag;
+                    if (testPattern.startsWith('(^|\\s)')) {
+                        testPattern = testPattern.substring(6); // Remove (^|\s) prefix
+                    }
+                    // Test if this pattern matches the text after delimiter
+                    const delimiterMatch = matchedText.match(new RegExp(this.delimiter + "\\s*"));
+                    if (delimiterMatch) {
+                        const textAfterDelimiter = matchedText.substring(delimiterMatch[0].length);
+                        const tagRegex = new RegExp(testPattern, 'i');
+                        if (tagRegex.test(textAfterDelimiter)) {
+                            matchTag = tag;
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    // Pattern error, continue to next tag
+                    continue;
+                }
+            }
+            
+            // Fallback: match by tag name in the matched text
+            if (!matchTag && matchedText) {
+                matchTag = this.tags.find(item => {
+                    const tagLower = item.tag.toLowerCase();
+                    const matchedLower = matchedText.toLowerCase();
+                    // Check if tag name appears in matched text
+                    return matchedLower.includes(tagLower) || 
+                           matchedText.includes(item.tag) ||
+                           // Also check for symbol tags
+                           (item.tag.length === 1 && matchedText.includes(item.tag));
+                });
+            }
 
             if (matchTag) {
                 matchTag.ranges.push(range);
@@ -329,9 +367,11 @@ export class Parser {
             // Use pattern if available, otherwise use tag
             let escapedSequence: string;
             if (item.pattern) {
-                // Pattern is already a regex, but we need to extract the tag part for matching
+                // Pattern is already a regex pattern - use it directly
+                // The pattern should match the full tag including optional symbols, @ prefix, etc.
                 escapedSequence = item.pattern;
             } else {
+                // Fallback: escape the tag for basic matching
                 escapedSequence = item.tag.replace(/([()[{*+.$^\\|?])/g, '\\$1');
                 escapedSequence = escapedSequence.replace(/\//gi, "\\/"); // ! hardcoded to escape slashes
             }
