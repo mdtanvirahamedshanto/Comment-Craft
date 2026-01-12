@@ -1,0 +1,204 @@
+{
+  "name": "comment-craft",
+  "displayName": "Comment Craft",
+  "description": "Craft beautiful and professional code comments with ease. Includes comment highlighting, generation, and formatting features.",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.108.0"
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "categories": [
+    "Other",
+    "Documentation",
+    "Formatters"
+  ],
+  "keywords": [
+    "comment",
+    "documentation",
+    "code",
+    "annotation",
+    "docs"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "commentCraft.generateComment",
+        "title": "Comment Craft: Generate Comment",
+        "category": "Comment Craft"
+      },
+      {
+        "command": "commentCraft.formatComments",
+        "title": "Comment Craft: Format Comments",
+        "category": "Comment Craft"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "commentCraft.generateComment",
+          "when": "editorHasSelection",
+          "group": "commentCraft"
+        },
+        {
+          "command": "commentCraft.formatComments",
+          "when": "editorTextFocus",
+          "group": "commentCraft"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "commentCraft.generateComment",
+          "title": "Comment Craft: Generate Comment"
+        },
+        {
+          "command": "commentCraft.formatComments",
+          "title": "Comment Craft: Format Comments"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "commentCraft.generateComment",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Comment Craft",
+      "properties": {
+        "commentCraft.style": {
+          "type": "string",
+          "default": "standard",
+          "enum": [
+            "standard",
+            "javadoc",
+            "jsdoc",
+            "doxygen"
+          ],
+          "enumDescriptions": [
+            "Standard single-line or multi-line comments",
+            "JavaDoc style comments",
+            "JSDoc style comments",
+            "Doxygen style comments"
+          ],
+          "description": "Comment style to use when generating comments"
+        },
+        "commentCraft.autoFormat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically format comments after generation"
+        },
+        "commentCraft.multilineComments": {
+          "type": "boolean",
+          "description": "Whether the multiline comment highlighter should be active",
+          "default": true
+        },
+        "commentCraft.highlightPlainText": {
+          "type": "boolean",
+          "description": "Whether the plaintext comment highlighter should be active",
+          "default": false
+        },
+        "commentCraft.tags": {
+          "type": "array",
+          "description": "Tags which are used to color the comments. Changes require a restart of VS Code to take effect",
+          "default": [
+            {
+              "tag": "!",
+              "color": "#FF2D00",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "?",
+              "color": "#3498DB",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "//",
+              "color": "#474747",
+              "strikethrough": true,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "todo",
+              "color": "#FF8C00",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            },
+            {
+              "tag": "*",
+              "color": "#98C379",
+              "strikethrough": false,
+              "underline": false,
+              "backgroundColor": "transparent",
+              "bold": false,
+              "italic": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "json5": "^2.2.1"
+  },
+  "devDependencies": {
+    "@types/json5": "^2.2.0",
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.108.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "typescript": "^5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mdtanvirahamedshanto/comment-craft.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mdtanvirahamedshanto/comment-craft/issues"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/mdtanvirahamedshanto"
+  },
+  "homepage": "https://github.com/mdtanvirahamedshanto/comment-craft#readme",
+  "license": "MIT",
+  "publisher": "mdtanvirahamedshanto",
+  "author": {
+    "name": "Md Tanvir Ahamed Shanto"
+  },
+  "icon": "images/icon.png"
+}
+
