@@ -1,6 +1,21 @@
 import * as vscode from 'vscode';
 import { Configuration } from './configuration';
 
+// Output channel will be set by extension
+let outputChannel: vscode.OutputChannel | null = null;
+
+export function setOutputChannel(channel: vscode.OutputChannel): void {
+    outputChannel = channel;
+}
+
+function log(message: string): void {
+    if (outputChannel) {
+        outputChannel.appendLine(message);
+    } else {
+        console.log(message);
+    }
+}
+
 export class Parser {
     private tags: CommentTag[] = [];
     private expression: string = "";
@@ -22,7 +37,7 @@ export class Parser {
     // * this is used to trigger the events when a supported language code is found
     public supportedLanguage = true;
 
-    // Read from the package.json
+    // Read from the package.json - will be updated from config in setTags()
     private contributions: Contributions = vscode.workspace.getConfiguration('commentCraft') as unknown as Contributions;
 
     // The configuration necessary to find supported languages on startup
@@ -36,7 +51,8 @@ export class Parser {
 
         this.configuration = config;
 
-        this.setTags();
+        // Don't load tags here - wait until SetRegex is called
+        // Tags will be loaded when SetRegex is called
     }
 
     /**
@@ -49,6 +65,19 @@ export class Parser {
 
         // if the language isn't supported, we don't need to go any further
         if (!this.supportedLanguage) {
+            return;
+        }
+
+        // Always reload tags to ensure they're current
+        this.setTags();
+
+        if (this.tags.length === 0) {
+            log('[Comment Craft] CRITICAL: No tags available for regex construction!');
+            log('[Comment Craft] Check your commentCraft.tags setting in VS Code settings');
+            if (outputChannel) {
+                outputChannel.show(true);
+            }
+            this.expression = "";
             return;
         }
 
@@ -78,10 +107,37 @@ export class Parser {
             }
             this.expression = plainTextPatterns.join("|");
         } else {
-            // For comments: delimiter + spaces + tag pattern
-            const delimiterPattern = "(" + this.delimiter + ")+( |\t)*";
+            // For comments: delimiter + optional spaces + tag pattern + rest of line
+            // Escape delimiter for regex - escape special regex characters
+            // The delimiter is stored as plain text (e.g., "//"), so we need to escape it properly
+            let escapedDelimiter = this.delimiter;
+            // Escape special regex characters first (excluding / which we'll handle separately)
+            // We need to be careful not to double-escape
+            escapedDelimiter = escapedDelimiter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // Then escape forward slashes (for // comments) - do this last
+            escapedDelimiter = escapedDelimiter.replace(/\//g, '\\/');
+            // Build pattern: (delimiter)+ followed by optional whitespace
+            // In string literal, \s needs to be \\s to become \s in the regex
+            const delimiterPattern = "(" + escapedDelimiter + ")+\\s*";
+            // Combine: delimiter + whitespace + (tag patterns) + rest
             this.expression = delimiterPattern + "(" + tagPatterns.join("|") + ")(.*)";
+            
+            // Test the regex to ensure it works (only log on failure)
+            try {
+                const testRegex = new RegExp(this.expression, 'i');
+                const testMatch = testRegex.exec('// TODO: test');
+                if (!testMatch) {
+                    log(`[Comment Craft] ERROR: Regex test FAILED - expression may be invalid`);
+                    log(`[Comment Craft] Expression: ${this.expression.substring(0, 200)}`);
+                }
+            } catch (e) {
+                log(`[Comment Craft] Regex construction error: ${e}`);
+                log(`[Comment Craft] Expression: ${this.expression.substring(0, 200)}`);
+            }
         }
+        
+        // Only log on first build or errors
+        // log(`[Comment Craft] Built regex for language "${languageCode}" with ${tagPatterns.length} tag patterns`);
     }
 
     /**
@@ -97,12 +153,56 @@ export class Parser {
 
         const text = activeEditor.document.getText();
 
+        // Check if we have tags and expression
+        if (this.tags.length === 0) {
+            log('[Comment Craft] No tags loaded for highlighting');
+            return;
+        }
+
+        if (!this.expression || this.expression.length === 0) {
+            log('[Comment Craft] ERROR: No regex expression set - cannot find comments');
+            return;
+        }
+
         // if it's plain text, we have to do mutliline regex to catch the start of the line with ^
         const regexFlags = (this.isPlainText) ? "igm" : "ig";
-        const regEx = new RegExp(this.expression, regexFlags);
+        let regEx: RegExp;
+        try {
+            regEx = new RegExp(this.expression, regexFlags);
+            // Test the regex immediately
+            const testMatch = regEx.exec('// TODO: test');
+            if (!testMatch) {
+                log(`[Comment Craft] ERROR: Regex does not match test string!`);
+                log(`[Comment Craft] Expression: ${this.expression.substring(0, 150)}`);
+                log(`[Comment Craft] Regex source: ${regEx.source.substring(0, 150)}`);
+            }
+            // Reset regex lastIndex
+            regEx.lastIndex = 0;
+        } catch (error) {
+            log(`[Comment Craft] ERROR: Invalid regex expression: ${error}`);
+            log(`[Comment Craft] Expression: ${this.expression.substring(0, 200)}`);
+            return;
+        }
 
         let match: RegExpExecArray | null;
+        let matchCount = 0;
+        let lastIndex = 0; // Prevent infinite loop
+
         while ((match = regEx.exec(text)) !== null) {
+            // Prevent infinite loop if regex doesn't advance
+            if (match.index === lastIndex) {
+                regEx.lastIndex++;
+                if (regEx.lastIndex >= text.length) {
+                    break;
+                }
+                continue;
+            }
+            lastIndex = match.index;
+            matchCount++;
+            // Only log first few matches to avoid spam
+            // if (matchCount <= 3) {
+            //     log(`[Comment Craft] Match #${matchCount} found at index ${match.index}: "${match[0].substring(0, 50)}"`);
+            // }
             const startPos = activeEditor.document.positionAt(match.index);
             const endPos = activeEditor.document.positionAt(match.index + match[0].length);
             const range = { range: new vscode.Range(startPos, endPos) };
@@ -125,13 +225,30 @@ export class Parser {
                         testPattern = testPattern.substring(6); // Remove (^|\s) prefix
                     }
                     // Test if this pattern matches the text after delimiter
-                    const delimiterMatch = matchedText.match(new RegExp(this.delimiter + "\\s*"));
+                    // Escape delimiter for regex matching
+                    const escapedDelimiterForMatch = this.delimiter.replace(/\//g, '\\/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const delimiterRegex = new RegExp("^" + escapedDelimiterForMatch + "\\s*");
+                    const delimiterMatch = matchedText.match(delimiterRegex);
                     if (delimiterMatch) {
                         const textAfterDelimiter = matchedText.substring(delimiterMatch[0].length);
-                        const tagRegex = new RegExp(testPattern, 'i');
-                        if (tagRegex.test(textAfterDelimiter)) {
-                            matchTag = tag;
-                            break;
+                        
+                        // Build test regex - the pattern should match from start of text after delimiter
+                        // Allow optional leading space if pattern doesn't already handle it
+                        let testRegexPattern = testPattern;
+                        // If pattern doesn't start with optional space or group, add optional space
+                        if (!testPattern.startsWith('\\s*') && !testPattern.startsWith('(') && !testPattern.startsWith('[')) {
+                            testRegexPattern = '\\s*' + testPattern;
+                        }
+                        
+                        try {
+                            const tagRegex = new RegExp('^' + testRegexPattern, 'i');
+                            if (tagRegex.test(textAfterDelimiter)) {
+                                matchTag = tag;
+                                break;
+                            }
+                        } catch (regexError) {
+                            log(`[Comment Craft] Regex error for tag "${tag.tag}": ${regexError}`);
+                            continue;
                         }
                     }
                 } catch (error) {
@@ -140,22 +257,75 @@ export class Parser {
                 }
             }
             
-            // Fallback: match by tag name in the matched text
+            // Fallback: match by tag name in the matched text (more strict matching)
             if (!matchTag && matchedText) {
+                // Extract text after delimiter for better matching
+                // Escape delimiter for regex matching
+                const escapedDelimiterForMatch = this.delimiter.replace(/\//g, '\\/').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const delimiterRegex = new RegExp("^" + escapedDelimiterForMatch + "\\s*");
+                const delimiterMatch = matchedText.match(delimiterRegex);
+                const textAfterDelimiter = delimiterMatch ? matchedText.substring(delimiterMatch[0].length) : matchedText;
+                
+                // Only match if we have text after the delimiter
+                if (textAfterDelimiter.trim().length === 0) {
+                    continue; // Skip empty comments
+                }
+                
                 matchTag = this.tags.find(item => {
                     const tagLower = item.tag.toLowerCase();
-                    const matchedLower = matchedText.toLowerCase();
-                    // Check if tag name appears in matched text
-                    return matchedLower.includes(tagLower) || 
-                           matchedText.includes(item.tag) ||
-                           // Also check for symbol tags
-                           (item.tag.length === 1 && matchedText.includes(item.tag));
+                    const textAfterLower = textAfterDelimiter.toLowerCase().trim();
+                    
+                    // More strict matching - tag should appear at the start or after whitespace/symbols
+                    // For FIXME tag, also check for FIX (without ME) but only at word boundary
+                    if (item.tag === 'FIXME') {
+                        const fixPattern = /(^|\s)(fix|fixme)(\s|:|-|$)/i;
+                        if (fixPattern.test(textAfterDelimiter)) {
+                            return true;
+                        }
+                    }
+                    
+                    // For word tags (longer than 1 char), match at word boundary
+                    if (item.tag.length > 1) {
+                        const tagPattern = new RegExp('(^|\\s|@)' + this.escapeRegExp(item.tag) + '(\\s|:|\\-|$)', 'i');
+                        if (tagPattern.test(textAfterDelimiter)) {
+                            return true;
+                        }
+                        // Also try case-insensitive
+                        const tagPatternLower = new RegExp('(^|\\s|@)' + this.escapeRegExp(tagLower) + '(\\s|:|\\-|$)', 'i');
+                        if (tagPatternLower.test(textAfterDelimiter)) {
+                            return true;
+                        }
+                    } else {
+                        // For single character tags, match exactly (not as substring)
+                        const charPattern = new RegExp('(^|\\s)' + this.escapeRegExp(item.tag) + '(\\s|:|\\-|$)', 'i');
+                        if (charPattern.test(textAfterDelimiter)) {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
                 });
             }
 
             if (matchTag) {
-                matchTag.ranges.push(range);
+                // Verify the range is actually within a comment line
+                const lineText = activeEditor.document.lineAt(startPos.line).text;
+                const relativeStart = startPos.character;
+                
+                // Check if the matched text is actually within a comment on this line
+                const beforeMatch = lineText.substring(0, relativeStart);
+                const isInComment = beforeMatch.includes(this.delimiter) || 
+                                   lineText.trim().startsWith(this.delimiter);
+                
+                if (isInComment) {
+                    matchTag.ranges.push(range);
+                }
             }
+        }
+        
+        if (matchCount === 0) {
+            // Only log if no matches found (indicates a problem)
+            log(`[Comment Craft] WARNING: No comment matches found in file`);
         }
     }
 
@@ -169,6 +339,12 @@ export class Parser {
         if (!this.highlightMultilineComments) {return;}
         
         const text = activeEditor.document.getText();
+        const languageId = activeEditor.document.languageId;
+        
+        // Handle JSX/TSX comments: {/* ... */}
+        if (languageId === 'javascriptreact' || languageId === 'typescriptreact' || languageId === 'jsx' || languageId === 'tsx') {
+            this.findJSXComments(activeEditor, text);
+        }
 
         // Build up regex matcher for custom delimiter tags
         const characters: Array<string> = [];
@@ -197,12 +373,14 @@ export class Parser {
         const commentRegEx = new RegExp(commentMatchString, "igm");
 
         // Find the multiline comment block
-        let match: any;
+        let match: RegExpExecArray | null;
+        // eslint-disable-next-line no-cond-assign
         while (match = regEx.exec(text)) {
             const commentBlock = match[0];
 
             // Find the line
             let line;
+            // eslint-disable-next-line no-cond-assign
             while (line = commentRegEx.exec(commentBlock)) {
                 const startPos = activeEditor.document.positionAt(match.index + line.index + line[2].length);
                 const endPos = activeEditor.document.positionAt(match.index + line.index + line[0].length);
@@ -211,6 +389,89 @@ export class Parser {
                 // Find which custom delimiter was used in order to add it to the collection
                 const matchString = line[3] as string;
                 const matchTag = this.tags.find(item => item.tag.toLowerCase() === matchString.toLowerCase());
+
+                if (matchTag) {
+                    matchTag.ranges.push(range);
+                }
+            }
+        }
+    }
+
+    /**
+     * Finds JSX/TSX comments wrapped in curly braces
+     * Example: { /* TODO: fix this * / }
+     * @param activeEditor The active text editor containing the code document
+     * @param text The full text of the document
+     */
+    private findJSXComments(activeEditor: vscode.TextEditor, text: string): void {
+        if (!this.blockCommentStart || !this.blockCommentEnd) {
+            return;
+        }
+
+        // Match JSX comments: {/* ... */} or {/*TODO: ...*/} etc.
+        const escapedStart = this.escapeRegExp(this.blockCommentStart);
+        const escapedEnd = this.escapeRegExp(this.blockCommentEnd);
+        // Build regex pattern: { + /* + content + */ + }
+        const jsxCommentPattern = '\\{\\s*' + escapedStart + '\\s*([\\s\\S]*?)' + escapedEnd + '\\s*\\}';
+        const jsxRegEx = new RegExp(jsxCommentPattern, 'g');
+
+        // Build tag patterns
+        const tagPatterns: Array<string> = [];
+        for (const commentTag of this.tags) {
+            let pattern = commentTag.escapedTag;
+            if (pattern.startsWith('(^|\\s)')) {
+                pattern = pattern.substring(6);
+            }
+            tagPatterns.push(pattern);
+        }
+
+        if (tagPatterns.length === 0) {
+            return;
+        }
+
+        const tagMatchPattern = '(' + tagPatterns.join('|') + ')([\\s]*[:\\-]?[\\s]*)([^*/]*)';
+
+        let match: RegExpExecArray | null;
+        while ((match = jsxRegEx.exec(text)) !== null) {
+            const commentContent = match[1];
+            const contentRegEx = new RegExp(tagMatchPattern, 'gi');
+            let tagMatch: RegExpExecArray | null;
+            let lastIndex = 0;
+            
+            while ((tagMatch = contentRegEx.exec(commentContent)) !== null) {
+                if (tagMatch.index === lastIndex) {
+                    contentRegEx.lastIndex++;
+                    if (contentRegEx.lastIndex >= commentContent.length) {
+                        break;
+                    }
+                    continue;
+                }
+                lastIndex = tagMatch.index;
+                
+                const tagText = tagMatch[0];
+                const tagIndexInContent = commentContent.indexOf(tagText, tagMatch.index);
+                if (tagIndexInContent === -1) {
+                    continue;
+                }
+                
+                const commentStartInMatch = match[0].indexOf(commentContent);
+                const tagStartInDocument = match.index + commentStartInMatch + tagIndexInContent;
+                const tagEndInDocument = tagStartInDocument + tagText.length;
+                
+                const startPos = activeEditor.document.positionAt(tagStartInDocument);
+                const endPos = activeEditor.document.positionAt(tagEndInDocument);
+                const range: vscode.DecorationOptions = { range: new vscode.Range(startPos, endPos) };
+
+                const tagName = tagMatch[1];
+                const matchTag = this.tags.find(item => {
+                    const itemPattern = item.escapedTag.replace(/^\(^\|\\s\)/, '');
+                    const testRegex = new RegExp(itemPattern, 'i');
+                    if (testRegex.test(tagName)) {
+                        return true;
+                    }
+                    const tagLower = item.tag.toLowerCase();
+                    return tagName.toLowerCase().includes(tagLower) || tagName.includes(item.tag);
+                });
 
                 if (matchTag) {
                     matchTag.ranges.push(range);
@@ -283,12 +544,23 @@ export class Parser {
      * @param activeEditor The active text editor containing the code document
      */
     public ApplyDecorations(activeEditor: vscode.TextEditor): void {
+        let totalApplied = 0;
         for (const tag of this.tags) {
-            activeEditor.setDecorations(tag.decoration, tag.ranges);
+            if (tag.ranges.length > 0) {
+                activeEditor.setDecorations(tag.decoration, tag.ranges);
+                totalApplied += tag.ranges.length;
+            }
 
             // clear the ranges for the next pass
             tag.ranges.length = 0;
         }
+        
+        // Only log if no decorations applied (indicates a problem)
+        // if (totalApplied > 0) {
+        //     log(`[Comment Craft] Applied ${totalApplied} decorations`);
+        // } else {
+        //     log('[Comment Craft] WARNING: No decorations applied - no tags matched');
+        // }
     }
 
     //#region  Private Methods
@@ -341,11 +613,38 @@ export class Parser {
      * Sets the highlighting tags up for use by the parser
      */
     private setTags(): void {
-        const items = this.contributions.tags;
         const config = vscode.workspace.getConfiguration('commentCraft');
+        // Get tags from configuration - config.get will use package.json defaults if not overridden
+        interface TagConfig {
+            tag: string;
+            pattern?: string;
+            color: string;
+            strikethrough: boolean;
+            underline: boolean;
+            bold: boolean;
+            italic: boolean;
+            backgroundColor: string;
+        }
+        const items = config.get<Array<TagConfig>>('tags', []);
         const showGutterMarkers = config.get<boolean>('showGutterMarkers', true);
         const showOverviewRuler = config.get<boolean>('showOverviewRuler', true);
         const enableHighContrast = config.get<boolean>('enableHighContrast', false);
+
+        // Clear existing tags
+        this.tags = [];
+
+        if (!items || items.length === 0) {
+            log('[Comment Craft] ERROR: No tags found in configuration!');
+            log('[Comment Craft] This means highlighting will NOT work.');
+            log('[Comment Craft] Please check your commentCraft.tags setting.');
+            if (outputChannel) {
+                outputChannel.show(true);
+            }
+            return;
+        }
+
+        // Only log if no tags or on first load
+        // log(`[Comment Craft] Loading ${items.length} tags`);
 
         for (const item of items) {
             const options: vscode.DecorationRenderOptions = { 
@@ -453,14 +752,13 @@ export class Parser {
         // If no single line comment delimiter is passed, single line comments are not supported
         if (singleLine) {
             if (typeof singleLine === 'string') {
-                this.delimiter = this.escapeRegExp(singleLine).replace(/\//ig, "\\/");
+                // Store delimiter as-is, we'll escape it when building the regex pattern
+                this.delimiter = singleLine;
             }
             else if (singleLine.length > 0) {
                 // * if multiple delimiters are passed, the language has more than one single line comment format
-                const delimiters = singleLine
-                            .map(s => this.escapeRegExp(s))
-                            .join("|");
-                this.delimiter = delimiters;
+                // Store as-is, will escape when building regex
+                this.delimiter = singleLine.join("|");
             }
         }
         else {
@@ -471,7 +769,9 @@ export class Parser {
             this.blockCommentStart = this.escapeRegExp(start);
             this.blockCommentEnd = this.escapeRegExp(end);
 
-            this.highlightMultilineComments = this.contributions.multilineComments;
+            // Enable multiline comments by default, or use config setting
+            const config = vscode.workspace.getConfiguration('commentCraft');
+            this.highlightMultilineComments = config.get<boolean>('multilineComments', true);
         }
     }
 

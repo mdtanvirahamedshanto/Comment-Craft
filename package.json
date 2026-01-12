@@ -2,7 +2,7 @@
   "name": "comment-craft",
   "displayName": "Comment Craft",
   "description": "Craft beautiful and professional code comments with intelligent highlighting, generation, formatting, templates, statistics, validation, and comprehensive tag management. Supports 150+ languages with advanced features like search, reminders, and integrations.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.108.0"
   },
@@ -15,7 +15,6 @@
   ],
   "categories": [
     "Other",
-    "Documentation",
     "Formatters"
   ],
   "keywords": [
@@ -445,7 +444,7 @@
         },
         "commentCraft.enableCodeLens": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable CodeLens actions above tags"
         },
         "commentCraft.enableHighContrast": {

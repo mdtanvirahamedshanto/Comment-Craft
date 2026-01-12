@@ -44,7 +44,7 @@ export class TagCodeLensProvider implements vscode.CodeLensProvider {
 
             const codeLens = new vscode.CodeLens(range);
             codeLens.command = {
-                title: `$(tag) ${tagInfo.tagName} - Actions`,
+                title: `$(tag) ${tagInfo.tagName}`,
                 command: 'commentCraft.tagActions',
                 arguments: [tagInfo]
             };

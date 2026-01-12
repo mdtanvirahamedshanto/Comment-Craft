@@ -16,23 +16,32 @@ import { CommentValidator } from './commentValidation';
 import { CommentSnippets } from './commentSnippets';
 import { CommentReminderManager } from './commentReminders';
 
+// Create output channel for logging
+const outputChannel = vscode.window.createOutputChannel('Comment Craft');
+
 /**
  * Activates the Comment Craft extension
  * @param context - The extension context
  */
 export async function activate(context: vscode.ExtensionContext) {
-    console.log('Comment Craft extension is now active!');
+    // Import and set output channel for parser
+    const { setOutputChannel } = await import('./parser');
+    setOutputChannel(outputChannel);
+    
+    outputChannel.appendLine('Comment Craft extension is now active!');
+    outputChannel.show(true); // Show the output channel
 
     const config = vscode.workspace.getConfiguration('commentCraft');
     const enabled = config.get<boolean>('enabled', true);
     
     if (!enabled) {
-        console.log('Comment Craft is disabled');
+        outputChannel.appendLine('Comment Craft is disabled');
         return;
     }
 
     // ===== Better Comments Feature (Comment Highlighting) =====
     let activeEditor: vscode.TextEditor;
+    let isUpdating = false; // Declare early so updateDecorations can access it
 
     const configuration: Configuration = new Configuration();
     let parser: Parser = new Parser(configuration);
@@ -75,39 +84,65 @@ export async function activate(context: vscode.ExtensionContext) {
     statusBarManager.update();
 
     // Called to handle events below
+    let lastUpdateText = '';
     const updateDecorations = function () {
-        // if no active window is open, return
-        if (!activeEditor) {
+        // Prevent recursive calls
+        if (isUpdating) {
             return;
         }
+        isUpdating = true;
 
-        // if lanugage isn't supported, return
-        if (!parser.supportedLanguage) {
-            return;
+        try {
+            // if no active window is open, return
+            if (!activeEditor) {
+                return;
+            }
+            
+            // Only process file editors, skip output panels, diff views, etc.
+            if (activeEditor.document.uri.scheme !== 'file') {
+                return;
+            }
+
+            // if lanugage isn't supported, return
+            if (!parser.supportedLanguage) {
+                return;
+            }
+
+            // Check if text actually changed
+            const currentText = activeEditor.document.getText();
+            if (currentText === lastUpdateText) {
+                return; // Text hasn't changed, skip update
+            }
+            lastUpdateText = currentText;
+
+            // Finds the single line comments using the language comment delimiter
+            parser.FindSingleLineComments(activeEditor);
+
+            // Finds the multi line comments using the language comment delimiter
+            parser.FindBlockComments(activeEditor);
+
+            // Finds the jsdoc comments
+            parser.FindJSDocComments(activeEditor);
+
+            // Apply the styles set in the package.json
+            parser.ApplyDecorations(activeEditor);
+        } catch (error) {
+            outputChannel.appendLine(`[Comment Craft] ERROR in updateDecorations: ${error}`);
+        } finally {
+            isUpdating = false;
         }
-
-        // Finds the single line comments using the language comment delimiter
-        parser.FindSingleLineComments(activeEditor);
-
-        // Finds the multi line comments using the language comment delimiter
-        parser.FindBlockComments(activeEditor);
-
-        // Finds the jsdoc comments
-        parser.FindJSDocComments(activeEditor);
-
-        // Apply the styles set in the package.json
-        parser.ApplyDecorations(activeEditor);
     };
 
     // Get the active editor for the first time and initialise the regex
-    if (vscode.window.activeTextEditor) {
+    if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.scheme === 'file') {
         activeEditor = vscode.window.activeTextEditor;
-
         // Set the regex patterns for the specified language's comments
         await parser.SetRegex(activeEditor.document.languageId);
 
-        // Trigger first update of decorators
-        triggerUpdateDecorations();
+        // Trigger first update of decorators - call directly for immediate effect
+        updateDecorations();
+    } else {
+        outputChannel.appendLine('[Comment Craft] No active file editor on startup');
     }
 
     // * Handle extensions being added or removed
@@ -117,23 +152,36 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // * Handle active file changed
     vscode.window.onDidChangeActiveTextEditor(async editor => {
-        if (editor) {
+        // Only process file editors, skip output panels, diff views, etc.
+        if (editor && editor.document.uri.scheme === 'file') {
             activeEditor = editor;
-
             // Set regex for updated language
             await parser.SetRegex(editor.document.languageId);
-
             // Trigger update to set decorations for newly active file
             triggerUpdateDecorations();
         }
     }, null, context.subscriptions);
 
     // * Handle file contents changed
+    // isUpdating is already declared above
     vscode.workspace.onDidChangeTextDocument(async event => {
+        // Prevent recursive updates - don't update if we're already updating
+        if (isUpdating) {
+            return;
+        }
+
+        // Only process file editors, skip output panels, diff views, etc.
+        if (event.document.uri.scheme !== 'file') {
+            return;
+        }
 
         // Trigger updates if the text was changed in the same document
+        // Skip if content changes are from undo/redo or other non-user edits
         if (activeEditor && event.document === activeEditor.document) {
-            triggerUpdateDecorations();
+            // Only update if it's a real content change (not from decorations)
+            if (event.contentChanges.length > 0) {
+                triggerUpdateDecorations();
+            }
         }
         
         // Update tag scanner for changed files
@@ -148,13 +196,35 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // * IMPORTANT:
     // * To avoid calling update too often,
-    // * set a timer for 100ms to wait before updating decorations
+    // * set a timer for 500ms to wait before updating decorations
     let timeout: NodeJS.Timeout | undefined;
+    let lastDocumentVersion = -1;
+    let lastDocumentText = '';
     function triggerUpdateDecorations() {
+        // Don't schedule if already updating
+        if (isUpdating) {
+            return;
+        }
+        
+        // Check if document actually changed
+        if (activeEditor) {
+            const currentVersion = activeEditor.document.version;
+            const currentText = activeEditor.document.getText();
+            
+            // Skip if document version and text haven't changed
+            if (currentVersion === lastDocumentVersion && currentText === lastDocumentText) {
+                return; // Document hasn't changed, skip update
+            }
+            lastDocumentVersion = currentVersion;
+            lastDocumentText = currentText;
+        }
+        
         if (timeout) {
             clearTimeout(timeout);
         }
-        timeout = setTimeout(updateDecorations, 100);
+        timeout = setTimeout(() => {
+            updateDecorations();
+        }, 500); // Increased debounce time to 500ms
     }
 
     // ===== Comment Craft Features (Comment Generation & Formatting) =====
