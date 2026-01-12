@@ -215,6 +215,30 @@ function getCommentPrefix(languageId: string, style: string): string {
         'scss': '//',
         'less': '//',
         'sass': '//',
+        'zig': '//',
+        'd': '//',
+        'vala': '//',
+        'cuda-cpp': '//',
+        'hlsl': '//',
+        'glsl': '//',
+        'reason': '//',
+        'ocaml': '//',
+        'reasonml': '//',
+        'json5': '//',
+        'jsonc': '//',
+        'verilog': '//',
+        'systemverilog': '//',
+        'pascal': '//',
+        'delphi': '//',
+        'modula-2': '//',
+        'oberon': '//',
+        'crystal': '#',
+        'stylus': '//',
+        'postcss': '//',
+        'terraform': '//',
+        'hcl': '//',
+        'cue': '//',
+        'nix': '#',
         
         // Languages using #
         'python': '#',
@@ -234,37 +258,201 @@ function getCommentPrefix(languageId: string, style: string): string {
         'properties': '#',
         'coffeescript': '#',
         'nim': '#',
+        'tcl': '#',
+        'awk': '#',
+        'sed': '#',
+        'fish': '#',
+        'zsh': '#',
+        'bash': '#',
+        'sh': '#',
+        'autoit': '#',
+        'graphql': '#',
+        'prometheus': '#',
+        'logql': '#',
+        'ansible': '#',
+        'helm': '#',
+        'pug': '//',
+        'jade': '//',
+        'org': '#',
+        'mathematica': '(*',
+        'wolfram': '(*',
         
         // Languages using --
         'lua': '--',
         'haskell': '--',
         'sql': '--',
         'ada': '--',
+        'vhdl': '--',
+        'eiffel': '--',
+        'dhall': '--',
+        'elm': '--',
+        'idris': '--',
+        'agda': '--',
+        'purescript': '--',
         
         // Languages using %
         'matlab': '%',
         'erlang': '%',
+        'prolog': '%',
+        'tex': '%',
+        'latex': '%',
+        'postscript': '%',
+        'octave': '%',
+        'scilab': '%',
         
         // Languages using ;
         'scheme': ';',
         'racket': ';',
         'clojure': ';',
+        'common-lisp': ';',
+        'lisp': ';',
+        'emacs-lisp': ';',
+        'autohotkey': ';',
+        'assembly': ';',
+        'asm': ';',
+        'x86': ';',
+        'x86-64': ';',
+        'arm': ';',
+        'mips': ';',
+        'riscv': ';',
         
         // Languages using '
         'vb': "'",
         'vbnet': "'",
         'vbscript': "'",
+        'visual-basic': "'",
         
         // Languages using !
         'fortran': '!',
+        'fortran-modern': '!',
+        'fortran-free-form': '!',
         
         // Languages using <!--
         'html': '<!--',
         'xml': '<!--',
         'markdown': '<!--',
+        'vue': '<!--',
+        'vue-html': '<!--',
+        'svelte': '<!--',
+        'angular': '<!--',
+        'jsx': '//',
+        'tsx': '//',
+        'react': '//',
         
         // Languages using /*
-        'css': '/*'
+        'css': '/*',
+        'javascriptreact': '//',
+        'typescriptreact': '//',
+        
+        // Template languages
+        'handlebars': '{{! ',
+        'mustache': '{{! ',
+        'ejs': '<%# ',
+        'liquid': '{% comment %}',
+        'twig': '{# ',
+        'jinja': '{# ',
+        'jinja-html': '{# ',
+        'nunjucks': '{# ',
+        'erb': '<%# ',
+        
+        // Configuration and data formats
+        'json': '//',
+        'edn': ';',
+        'clojurescript': ';',
+        'clojurec': ';',
+        
+        // Build tools and package managers
+        'gradle': '//',
+        'maven': '<!--',
+        'pom.xml': '<!--',
+        'build.gradle': '//',
+        'build.gradle.kts': '//',
+        
+        // Documentation formats
+        'textile': '//',
+        
+        // Scripting and automation
+        'gherkin': '#',
+        'cucumber': '#',
+        'robot': '#',
+        'robotframework': '#',
+        
+        // Special file types
+        'plaintext': '//',
+        'text': '//',
+        'log': '#',
+        'gitignore': '#',
+        'gitattributes': '#',
+        'editorconfig': '#',
+        'eslintrc': '//',
+        'prettierrc': '//',
+        'babelrc': '//',
+        'webpack': '//',
+        'rollup': '//',
+        'vite': '//',
+        
+        // Domain-specific languages
+        'gcode': ';',
+        'cnc': ';',
+        
+        // Legacy and specialized
+        'cobol': '*>',
+        'rpg': '*',
+        'abap': '*',
+        'plsql': '--',
+        'transact-sql': '--',
+        'tsql': '--',
+        'mysql': '--',
+        'postgresql': '--',
+        'plpgsql': '--',
+        'oracle': '--',
+        
+        // Markup variants
+        'svg': '<!--',
+        'xhtml': '<!--',
+        'xsl': '<!--',
+        'xslt': '<!--',
+        'xsd': '<!--',
+        
+        // Styling variants
+        'sugarss': '//',
+        
+        // Shell variants
+        'tcsh': '#',
+        'csh': '#',
+        'ksh': '#',
+        
+        // Batch and scripting
+        'batch': 'REM ',
+        'bat': 'REM ',
+        'cmd': 'REM ',
+        'vbs': "'",
+        'wsf': '<!--',
+        
+        // Editor configs
+        'vim': '"',
+        'viml': '"',
+        'vimscript': '"',
+        'neovim': '"',
+        
+        // Other
+        'smalltalk': '"',
+        'apl': '⍝',
+        'forth': '\\',
+        'factor': '!',
+        'io': '//',
+        'ioke': ';',
+        'j': 'NB.',
+        'k': '\\',
+        'q': '\\',
+        'rebol': ';',
+        'red': ';',
+        'wren': '//',
+        'xtend': '//',
+        'xquery': '(:',
+        'xpath': '(:',
+        'xproc': '(:',
+        'xq': '(:'
     };
 
     return prefixes[languageId] || '//';
